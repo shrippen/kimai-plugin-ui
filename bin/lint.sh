@@ -32,7 +32,7 @@ for k in $(grep -ohE "'kpu\.[a-z_]+\.[a-z_]+'" kit/templates/_kit/*.twig | tr -d
     grep -q "resname=\"$k\"" kit/translations/kpu.de.xlf || { echo "FEHLER Key fehlt: $k" >&2; fail=1; }
 done
 # dynamische Keys (kpu.status.<x>, kpu.period.<x>)
-for k in open requested approved rejected billed locked; do grep -q "resname=\"kpu.status.$k\"" kit/translations/kpu.de.xlf || { echo "FEHLER kpu.status.$k" >&2; fail=1; }; done
+for k in open requested approved rejected billed locked warning; do grep -q "resname=\"kpu.status.$k\"" kit/translations/kpu.de.xlf || { echo "FEHLER kpu.status.$k" >&2; fail=1; }; done
 for k in day week month year; do grep -q "resname=\"kpu.period.$k\"" kit/translations/kpu.de.xlf || { echo "FEHLER kpu.period.$k" >&2; fail=1; }; done
 [ "$fail" -eq 0 ] && echo "ok   alle benutzten kpu.-Keys vorhanden"
 
