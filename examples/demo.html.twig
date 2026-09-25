@@ -1,0 +1,141 @@
+{#
+    Referenzseite für alle Kit-Makros (kimai-plugin-ui).
+    "@DemoBundle" durch den Twig-Namespace des eigenen Bundles ersetzen (z. B. @AbrechnungBundle).
+
+    Controller-Skizze:
+        $page = new PageSetup('abrechnung.title');          // Seitentitel inkl. Zeitraum, z. B. "Abrechnung · Mai 2025"
+        $page->setActionName('abrechnung');                 // PageActionsEvent "actions.abrechnung" -> Icon-Knöpfe + "…"
+        $page->setHelp('https://github.com/…/docs/abrechnung.md');
+        return $this->render('@AbrechnungBundle/abrechnung/index.html.twig', ['page_setup' => $page, …]);
+
+    Alle Beispieldaten sind hier im Template gesetzt, damit die Seite ohne Controller-Daten rendert.
+    Die deutschen Beispieltexte sind nur der Kürze halber fest eingetragen – im Plugin kommt JEDER Text
+    aus einem Übersetzungskey mit Plugin-Präfix (GUIDELINES.md, Abschnitt Übersetzungen).
+#}
+{% extends 'base.html.twig' %}
+{% import '@DemoBundle/_kit/macros.html.twig' as kit %}
+{% import 'macros/widgets.html.twig' as widgets %}
+{% import 'macros/datatables.html.twig' as tables %}
+
+{# ---------- Kit-Assets: einmal pro Seite ---------- #}
+{% block stylesheets %}
+    {{ parent() }}
+    {% include '@DemoBundle/_kit/assets.html.twig' with {kpu_part: 'css'} %}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% include '@DemoBundle/_kit/assets.html.twig' with {kpu_part: 'js'} %}
+{% endblock %}
+
+{# ---------- Seitenkopf: Kontextzeile + Zeitraum ---------- #}
+{% set unit = app.request.query.get('unit', 'month') %}
+{% set labels = {week: 'KW 21 · 19.–25.05.2025', month: 'Mai 2025', year: '2025'} %}
+
+{% block page_intro %}
+    {{ kit.context_line(['ACME', 'Website', app.user.displayName, labels[unit] ?? labels.month]) }}
+    {{ parent() }}
+{% endblock %}
+
+{% block table_actions %}
+    {{ kit.period_nav(
+        ['week', 'month', 'year'],
+        unit,
+        labels[unit] ?? labels.month,
+        '?unit=' ~ unit ~ '&p=prev',
+        '?unit=' ~ unit ~ '&p=next',
+        '?unit=' ~ unit,
+        {week: '?unit=week', month: '?unit=month', year: '?unit=year'}
+    ) }}
+{% endblock %}
+
+{# ---------- Ergebnis-Flashes sichtbar machen (vor Kimais Flash-Verarbeitung) ---------- #}
+{% block page_content_start %}
+    {{ kit.result_callouts() }}
+    {{ parent() }}
+{% endblock %}
+
+{% block main %}
+    {# Rückmeldung mit Zahl, z. B. nach Import #}
+    {{ kit.result_callout('12 Feiertage für 2026 importiert.') }}
+
+    {# Kennzahlen: max. 4, eine hervorgehoben; Werte immer über Kimai-Filter formatiert #}
+    {{ kit.kpi_bar([
+        {label: 'Offen', value: (5 * 3600 + 120)|duration, hint: '3 Einträge'},
+        {label: 'Abgerechnet', value: (270 * 3600 + 1920)|duration},
+        {label: 'Betrag offen', value: 1500.5|money('EUR'), highlight: true},
+        {label: 'Resturlaub', value: 12|amount, hint: 'Tage', url: '#'},
+    ]) }}
+
+    {# Gruppierte Tabelle im Kimai-DataTable-Look (Kopf/Fuß aus macros/datatables.html.twig) #}
+    {% set columns = {
+        'kpu_select': {class: 'alwaysVisible multiCheckbox w-min', orderBy: false, title: false},
+        'date': {class: 'alwaysVisible w-min', orderBy: false},
+        'user': {class: 'd-none d-md-table-cell', orderBy: false},
+        'duration': {class: 'text-end w-min', orderBy: false},
+        'status': {class: 'w-min', orderBy: false, title: 'status'},
+        'actions': {class: 'actions alwaysVisible', orderBy: false},
+    } %}
+    {% set rows = [
+        {id: 101, date: date('2026-09-24'), user: 'user1', duration: 3600, status: 'open'},
+        {id: 102, date: date('2026-09-25'), user: 'user1', duration: 60, status: 'billed'},
+        {id: 103, date: date('2026-10-14'), user: 'user2', duration: 10800, status: 'open'},
+    ] %}
+
+    <div class="card mb-3">
+        {{ kit.group_header('ACME', null|colorize('ACME'), [(4 * 3600 + 60)|duration, 0|money('EUR')], {
+            'download': {url: '#', title: 'export'},
+            'edit': {url: '#', title: 'edit'},
+        }) }}
+        {{ tables.datatable_header('kpu_demo', columns, null, {boxClass: 'kpu-table-wrap', columnConfig: false, sticky: false}) }}
+            {{ kit.group_header('Website', null, [(4 * 3600 + 60)|duration], null, {as_row: true, colspan: columns|length, level: 2}) }}
+            {% for row in rows %}
+                <tr>
+                    <td class="{{ datatable_column_class('kpu_demo', 'kpu_select') }}">{{ kit.bulk_checkbox('kpu-demo-bulk', row.id) }}</td>
+                    <td class="{{ datatable_column_class('kpu_demo', 'date') }}">{{ row.date|date_short }}</td>
+                    <td class="{{ datatable_column_class('kpu_demo', 'user') }}">{{ row.user }}</td>
+                    <td class="{{ datatable_column_class('kpu_demo', 'duration') }}">{{ row.duration|duration }}</td>
+                    <td class="{{ datatable_column_class('kpu_demo', 'status') }}">{{ kit.status_badge(row.status) }}</td>
+                    <td class="{{ datatable_column_class('kpu_demo', 'actions') }}">
+                        {{ widgets.table_actions({
+                            'success': {url: '#', title: 'Abrechnen', translation_domain: 'messages'},
+                            'edit': {url: '#', class: 'modal-ajax-form', title: 'edit'},
+                            'trash': {url: '#', class: 'confirmation-link text-red', attr: {'data-question': 'confirm.delete'}, title: 'trash'},
+                        }) }}
+                    </td>
+                </tr>
+            {% endfor %}
+        {{ tables.data_table_footer(null, null, null) }}
+        <div class="card-footer">
+            {{ kit.bulk_select_all('kpu-demo-bulk') }}
+            <span class="ms-2 text-body-secondary">{{ 'kpu.bulk.select_all'|trans({}, 'kpu') }}</span>
+        </div>
+    </div>
+
+    {# Sammelaktion: umkehrbar -> sofort + Rückgängig-Toast (ajax); endgültig -> Kimai-Modal (question) #}
+    {{ kit.bulk_bar('kpu-demo-bulk', [
+        {label: 'Abrechnen', url: '#', token: csrf_token('kpu_demo'), icon: 'success', ajax: true},
+        {label: 'Löschen', url: '#', token: csrf_token('kpu_demo'), icon: 'trash', class: 'btn-danger', question: 'confirm.delete'|trans},
+    ]) }}
+
+    {# Status-Vokabular #}
+    <div class="card mb-3">
+        <div class="card-body d-flex flex-wrap gap-2">
+            {% for s in ['open', 'requested', 'approved', 'rejected', 'billed', 'locked'] %}
+                {{ kit.status_badge(s) }}
+            {% endfor %}
+        </div>
+    </div>
+
+    {# Leerzustand mit nächstem Schritt #}
+    {{ kit.empty_state('Keine offenen Einträge für Mai 2025.', '?unit=month', 'Filter zurücksetzen') }}
+    {{ kit.empty_state() }}
+
+    {# Rückgängig-Toast direkt auslösen (nur Demo) #}
+    <button type="button" class="btn" id="kpu-demo-toast">Toast zeigen</button>
+    <script>
+        document.getElementById('kpu-demo-toast').addEventListener('click', function () {
+            KimaiPluginUi.undoToast('3 Einträge abgerechnet', {url: '#', token: 'x', ids: [101, 102, 103]});
+        });
+    </script>
+{% endblock %}
