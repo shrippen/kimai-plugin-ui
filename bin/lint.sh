@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Selbsttest des Kits (ohne Kimai): JS-Syntax, keine festen Farben im CSS, XLIFF wohlgeformt, de/en gleicher Key-Bestand,
-# assets.html.twig aktuell. Twig-Syntax prüft Kimai: bin/console lint:twig <bundle>/Resources/views/_kit
+# assets.html.twig aktuell, kit.js-Tests (tests/kit.test.js), kein innerHTML in kit.js. Twig-Syntax prüft Kimai: bin/console lint:twig <bundle>/Resources/views/_kit
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -8,8 +8,16 @@ fail=0
 
 if command -v node >/dev/null 2>&1; then
     node --check kit/js/kit.js && echo "ok   kit.js Syntax"
+    node tests/kit.test.js || { echo "FEHLER tests/kit.test.js" >&2; fail=1; }
 else
-    echo "skip kit.js Syntax (node fehlt)"
+    echo "skip kit.js Syntax und Tests (node fehlt)"
+fi
+
+# kit.js setzt nie HTML ein (Texte nur über textContent; Texte für Kimais alert-Plugin über escapeHtml)
+if grep -nE 'innerHTML|outerHTML|insertAdjacentHTML|document\.write' kit/js/kit.js | grep -v '^\s*[0-9]*:\s*\*'; then
+    echo "FEHLER kit.js setzt HTML ein (innerHTML & Co.)" >&2; fail=1
+else
+    echo "ok   kit.js ohne innerHTML & Co."
 fi
 
 if grep -nEi '#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(|:\s*(white|black)\b' kit/css/kit.css; then

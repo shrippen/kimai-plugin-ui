@@ -2,6 +2,43 @@
 
 Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionen nach [SemVer](https://semver.org/lang/de/).
 
+## [0.3.0] – 2026-09-25
+
+Lücken aus den Integrationen Holiday, Abrechnung, Drehzettel und Anfahrten (MileageBundle). Abwärtskompatibel bis auf
+den Sicherheitsfix: `data-kpu-question` ist jetzt reiner Text.
+
+### Sicherheit
+- kit.js: `data-kpu-question` (Sofort-Aktionen) und `question` der Sammelleiste wurden ungeprüft an Kimais
+  `alert.question()` übergeben, das den Text per `innerHTML` einsetzt – HTML im Text (z. B. ein Benutzer- oder
+  Projektname in der Frage) wurde ausgeführt. Jetzt maskiert kit.js den Text vorher. Ebenso Titel und Server-Meldung
+  in Fehler-Alerts (`alert.error()`, Meldung aus der JSON-Antwort `{message}`). Sonst setzt kit.js nirgends HTML ein
+  (Toasts, Zähler: `textContent`).
+- `empty_state`: Attributnamen aus `link_attr` werden maskiert.
+
+### Neu
+- `KimaiPluginUi.escapeHtml(text)` für eigenes Plugin-JS, das Kimais `alert`-Plugin mit Daten aufruft.
+- `tests/kit.test.js` (Node, ohne Browser): Version, `escapeHtml`, Frage und Fehlermeldung kommen maskiert bei Kimai an;
+  läuft in `bin/lint.sh`. `bin/lint.sh` prüft außerdem, dass kit.js kein `innerHTML` & Co. benutzt.
+- GUIDELINES 5: Glossar um **Genehmigen/Ablehnen** (einheitlich in Holiday, Anfahrten und künftigen Freigaben, mit
+  Icons, Status und Meldungsmuster) und die Anfahrten-Begriffe erweitert (Fahrt, Arbeitsweg, Dienstreise, Privatfahrt,
+  Beleg, Verpflegungspauschale/-mehraufwand, Entfernungspauschale, Monatsabschluss, Abschließen/Wieder öffnen,
+  Fahrtenbuch, Fahrzeug, Mietvorgang, Erkannte Fahrt). Präfix `mileage.` in Abschnitt 6.
+- GUIDELINES 2.3: **Icon = Aktionsschlüssel.** Kimai zeigt am Dropdown-Knopf eines Untermenüs nur den Schlüssel als Icon
+  (`icon` wird ignoriert), in Untermenüs und im mobilen „…“-Menü gar keins. Regel: Schlüssel = passender Kimai-Alias
+  bzw. FA-Klasse, keine Option `icon` mit abweichendem Schlüssel. CHECKLIST-Punkt dazu.
+
+### Geändert
+- `kpi_bar` `details`: Ein Eintrag bricht nie in sich um. Label und Wert bleiben auf einer Zeile; ist die Kachel zu
+  schmal (360–390 px, zwei Kacheln nebeneinander), wird das Label mit „…“ gekürzt (voller Text im `title`), der Wert
+  bleibt ganz sichtbar. Vorher liefen lange Labels über den Kachelrand hinaus. Kacheln haben `min-width: 0`.
+- GUIDELINES 3.5/10, README, CHECKLIST: `data-kpu-question`/`question` sind reiner Text; Daten für Kimais `alert`-Plugin maskieren.
+
+### Migration 0.2 → 0.3
+- `bin/sync.sh <bundle>`, dann `bin/sync.sh <bundle> --check`. Alle Plugins auf 0.3 (kit.js lädt pro Seite nur einmal).
+- Fragen in `data-kpu-question`/`question` mit HTML-Auszeichnung (`<br>`, `<strong>`, `&nbsp;`) auf reinen Text umstellen –
+  sie würden sonst als Text angezeigt. (Stand 0.3: keines der vier Plugins nutzt HTML in Fragen.)
+- Seitenaktionen mit `icon`-Option und abweichendem Schlüssel auf Schlüssel = Icon umstellen (vor allem Untermenüs).
+
 ## [0.2.0] – 2026-09-25
 
 Rückmeldungen aus den Integrationen Drehzettel, Holiday und Abrechnung. Alle Änderungen sind abwärtskompatibel

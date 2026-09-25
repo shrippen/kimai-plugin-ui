@@ -1,6 +1,6 @@
 # kimai-plugin-ui
 
-Gemeinsamer UI-Leitfaden und kleines UI-Kit für die Kimai-2.67-Plugins **Drehzettel**, **Holiday** und **Abrechnung**.
+Gemeinsamer UI-Leitfaden und kleines UI-Kit für die Kimai-2.67-Plugins **Drehzettel**, **Holiday**, **Abrechnung** und **Anfahrten** (MileageBundle).
 
 - **[GUIDELINES.md](GUIDELINES.md)** – verbindliche Regeln: welcher Kimai-Baustein für welches Muster, Status-Vokabular,
   Formate, Glossar, Übersetzungen, Mobil, Dunkelmodus.
@@ -33,7 +33,7 @@ bin/sync.sh /pfad/zu/kimai-abrechnung-bundle
 Das kopiert nach `Resources/views/_kit/` (Makros, Assets, `VERSION`) und `Resources/translations/kpu.de.xlf`,
 `kpu.en.xlf`. Plugin-eigene Dateien werden nicht angefasst, ein zweiter Lauf ändert nichts.
 Danach im Kimai-Container `bin/console kimai:reload` und die kopierten Dateien im Plugin committen
-(„UI-Kit 0.2.0 übernommen“).
+(„Update UI kit to 0.3.0“). Mit `bin/sync.sh <bundle> --check` prüfen, ob ein Plugin auf Stand ist (Exit 1, wenn nicht).
 
 Im Template (Namespace = Bundle-Name ohne „Bundle“):
 
@@ -80,7 +80,7 @@ return $this->redirectToRoute('holiday_absence_index');
 ```
 
 Fehler: 4xx mit `{"message": "…"}` → kit.js zeigt Kimais Fehler-Alert. Optional `data-kpu-params` (JSON-Objekt, weitere
-POST-Felder) und `data-kpu-question` (nur Endgültiges). Destruktives bleibt bei `addDelete()`.
+POST-Felder) und `data-kpu-question` (nur Endgültiges; reiner Text, kit.js maskiert ihn seit 0.3 – kein HTML). Destruktives bleibt bei `addDelete()`.
 
 ### Modal-Formulare mit Ergebnis-Hinweis
 

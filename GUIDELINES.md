@@ -1,4 +1,4 @@
-# UI-Leitfaden für Kimai-Plugins (Drehzettel, Holiday, Abrechnung)
+# UI-Leitfaden für Kimai-Plugins (Drehzettel, Holiday, Abrechnung, Anfahrten)
 
 Gilt für Kimai **2.67** und alle Seiten, die die Plugins im Kimai-Webinterface zeigen (nicht für PDFs und Landingpages).
 Die Begriffe **MUSS**, **DARF NICHT**, **SOLL** und **KANN** sind verbindlich gemeint. Jede Abweichung von einem MUSS
@@ -71,8 +71,20 @@ Kit-Version: siehe [VERSION](VERSION). Pfade wie `/opt/kimai/templates/...` bezi
   - Helfer: `addCreate($url)` (Modal), `addEdit($url)`, `addDelete($url, …)`, `addQuickExport($url)`,
     `addAction('pdf', ['url' => …, 'title' => 'drehzettel.week_pdf'])`, Selteneres gruppiert mit
     `addActionToSubmenu('<icon-alias>', '<key>', [...])`.
-  - Der Schlüssel einer Aktion ist ein Kimai-Icon-Alias (Abschnitt 9). `title` ist ein Übersetzungskey (Domain
+  - Der Schlüssel einer Aktion ist ein Kimai-Icon-Alias (Abschnitt 9), und zwar der, der zur Aktion passt
+    (`success` = Genehmigen, `rejected` = Ablehnen, `pdf`, `mail`, `locked` …). `title` ist ein Übersetzungskey (Domain
     `messages`, sonst `'translation_domain' => …`).
+  - **Icon = Schlüssel** (seit 0.3). Die Option `icon` DARF NICHT benutzt werden, um einem anderen Schlüssel ein Icon zu
+    geben. Grund (Kimai 2.67, `macros/widgets.html.twig` `actions()` und `@Tabler/components/actions.html.twig`):
+    - Knöpfe auf dem Desktop zeigen `icon ?? Schlüssel`,
+    - Untermenüs (`addActionToSubmenu('<schlüssel>', …)` oder `addAction('<schlüssel>', ['children' => …])`) zeigen am
+      Dropdown-Knopf **nur den Schlüssel** – `icon` wird dort ignoriert,
+    - Einträge in Untermenüs und im mobilen „…“-Menü zeigen gar kein Icon, nur `title`.
+    Ein Schlüssel wie `mileage_commute` mit `'icon' => 'home'` sieht also als Knopf richtig aus, als Untermenü aber falsch.
+    Deshalb: Schlüssel = passender Kimai-Alias (`addAction('home', …)`, `addActionToSubmenu('edit', …)`), ohne `icon`.
+    Gibt es keinen Alias, ist der Schlüssel die FontAwesome-Klasse (`addAction('fas fa-location-dot', …)`, Untermenü
+    „Weitere“: `addAction('fas fa-ellipsis-h', ['title' => …, 'children' => …])`). Jeder Schlüssel nur einmal pro Seite –
+    zwei Aktionen mit gleichem Icon gehören in ein Untermenü.
   - Kimai zeigt die Aktionen auf dem Desktop als Knöpfe mit Icon, auf dem Handy automatisch als „…“-Menü.
 - Textknöpfe im Inhalt für Seitenaktionen DÜRFEN NICHT verwendet werden.
 
@@ -172,7 +184,9 @@ bleibt Kimais `widgets.label_boolean()`.
 - Höchstens **4** Kacheln (weitere schneidet das Makro ab), genau **eine** mit `highlight: true` (die wichtigste Zahl).
 - `value` MUSS mit Kimai-Filtern formatiert sein (Abschnitt 4). Kein eigener Hintergrund, keine weißen Texte.
 - Aufschlüsselung einer Kachel (z. B. Drehzettel-Zuschläge je Stufe) über `details: [{label, value}]` (seit 0.2), kurze
-  Labels, Werte formatiert; höchstens etwa 4 Einträge – mehr gehört in eine Tabelle.
+  Labels, Werte formatiert; höchstens etwa 4 Einträge – mehr gehört in eine Tabelle. Ein Eintrag bricht nie in sich um
+  (seit 0.3): Label und Wert bleiben zusammen, bei schmaler Kachel (360–390 px, zwei Kacheln nebeneinander) wird das
+  Label mit „…“ gekürzt (voller Text im Tooltip), der Wert bleibt ganz sichtbar; ganze Einträge rutschen in die nächste Zeile.
 - Summen pro Gruppe gehören in `kit.group_header(title, color, sums, actions, options)`: Farbpunkt über Kimais
   `widgets.label_dot`, Summen rechts, „…“ über `widgets.table_actions`. Als Tabellenzeile mit
   `{as_row: true, colspan: n}`, Untergruppe mit `{level: 2}`.
@@ -218,6 +232,9 @@ bleibt Kimais `widgets.label_boolean()`.
     mit `message` aus der JSON-Antwort. Ein eigener Listener auf `kpu:post-done` kann mit `preventDefault()` das
     Neuladen verhindern und die Seite selbst aktualisieren. `url` bleibt `'#'` (ein GET auf die POST-Route wäre ein 405).
     `data-kpu-question` gibt es nur für Endgültiges; Destruktives bleibt bei `addDelete()`/`confirmation-link`.
+    `data-kpu-question` und `question` in `kit.bulk_bar` sind **reiner Text** (seit 0.3): kit.js maskiert sie, bevor
+    Kimais Bestätigungsmodal sie einsetzt (Kimai setzt dort HTML ein). HTML-Auszeichnung (`<br>`, `<strong>`) erscheint
+    also als Text – Fragen kurz und ohne Markup formulieren. Namen von Benutzern, Projekten usw. dürfen darin stehen.
   - Einzelaktion aus eigenem JS: `KimaiPluginUi.undoToast(message, {url, token, ids})` oder
     `KimaiPluginUi.reloadWithToast(message, undo)`.
   - Die Undo-Route nimmt `_token` + `ids[]` per POST und antwortet `{"message": "…"}`.
@@ -340,6 +357,36 @@ Begriffe folgen Kimais deutscher Übersetzung. Wo ein Plugin einen Kimai-Begriff
 | PDF-Knöpfe | Wochen-PDF / Monats-PDF | Week PDF / Month PDF | „Timesheet“ |
 | Menü | Arbeitsvertrag › Abwesenheiten | Employment contract › Absences | „Absence“ (Einzahl) |
 | Rückgängig | Rückgängig | Undo | – |
+| Antrag annehmen (Knopf) | Genehmigen | Approve | „Freigeben“, „Bestätigen“, „Akzeptieren“ |
+| Antrag zurückweisen (Knopf) | Ablehnen | Reject | „Zurückweisen“, „Verweigern“, „Decline“ |
+| Zustand danach | Genehmigt / Abgelehnt (`status_badge('approved'/'rejected')`) | Approved / Rejected | „Freigegeben“ |
+| Antrag stellen (Knopf) | Zur Genehmigung einreichen | Submit for approval | „Absenden“, „Beantragen“ bei Monaten |
+
+**Anfahrten (MileageBundle)** – Begriffe nach deutschem Steuerrecht, gleich in Menü, Seiten, PDF und CSV:
+
+| Begriff | Deutsch | Englisch | Statt |
+|---|---|---|---|
+| Einzelne Fahrt (Oberbegriff) | Fahrt / Fahrten | Trip / Trips | „Anfahrt“, „Tour“, „Strecke“ als Objekt |
+| Wohnung ↔ erste Tätigkeitsstätte | Arbeitsweg | Commute | „Pendelfahrt“, „Weg zur Arbeit“ |
+| Auswärtstätigkeit, z. B. zum Kunden | Dienstreise | Business trip | „Dienstfahrt“, „Geschäftsreise“ |
+| Nicht abziehbar | Privatfahrt / Privat | Private trip / Private | – |
+| Nachweis zu einer Fahrt | Beleg / Belege | Receipt / Receipts | „Quittung“, „Anhang“, „Attachment“ |
+| Pauschale je Tag (Satz) | Verpflegungspauschale | Meal allowance | „Spesen“, „Tagegeld“ |
+| Summe der Pauschalen (Seite, Steuer) | Verpflegungsmehraufwand | Meal allowance | „Spesen“ |
+| km-Pauschale für den Arbeitsweg | Entfernungspauschale | Commuting allowance | „Pendlerpauschale“ |
+| Monate festschreiben (Seite) | Monatsabschluss | Month closing | „Monatssperre“ |
+| Monat festschreiben (Knopf) | Abschließen | Close | „Sperren“ beim Monat; Zustand danach `status_badge('locked')` |
+| Abschluss zurücknehmen (Knopf) | Wieder öffnen | Reopen | „Entsperren“ |
+| Gesamtes Protokoll | Fahrtenbuch | Logbook | „Log“ |
+| Auto usw. | Fahrzeug / Firmenwagen / Mietwagen | Vehicle / Company car / Rental | „KFZ“, „PKW“ als Objekt |
+| Einzelne Anmietung | Mietvorgang | Rental | „Miete“ |
+| Aus GPS vorgeschlagene Fahrt | Erkannte Fahrt · Übernehmen | Detected trip · Accept | „Vorschlag annehmen“ |
+
+**Genehmigen/Ablehnen** (seit 0.3) heißen in allen Plugins gleich – Abwesenheiten (Holiday), Monate/Fahrten
+(Anfahrten) und jede künftige Freigabe: Knopf „Genehmigen“ (Icon `success`, sofort + Rückgängig) und „Ablehnen“ (Icon
+`rejected`; mit Pflicht-Begründung im Modal, sonst sofort + Rückgängig). Meldungen: „3 Abwesenheiten genehmigt.“,
+„Fahrten von Anna für Mai 2026 abgelehnt.“ Die Zustände zeigen `status_badge('approved')`/`('rejected')`, der Antrag
+davor `status_badge('requested')`.
 
 **Knöpfe** sind ein Verb, das sagt, was passiert: „Abrechnen“, „Genehmigen“, „Speichern“. Das Objekt wird nicht
 wiederholt, wenn die Zeile es schon zeigt („Abrechnen“, nicht „Eintrag abrechnen“). Destruktive Aktionen sind rot
@@ -352,7 +399,7 @@ Zeitraum anpassen.“ Keine Ausnahmetexte, keine Entschuldigungen, keine Ausrufe
 
 ## 6. Übersetzungen (i18n)
 
-- Jedes Plugin nutzt nur Keys mit eigenem Präfix: `drehzettel.`, `holiday.`, `abrechnung.` (Domains `messages`,
+- Jedes Plugin nutzt nur Keys mit eigenem Präfix: `drehzettel.`, `holiday.`, `abrechnung.`, `mileage.` (Domains `messages`,
   `flashmessages`, `validators`). Das Kit nutzt die eigene Domain `kpu` mit Präfix `kpu.`.
 - Core-Keys DÜRFEN benutzt, aber NIE in Plugin-Dateien neu definiert werden (`action.save`, `confirm.delete`, `yes`, …).
 - Kein sichtbarer Text im Template, in PHP oder in JS ohne Key. JS bekommt Texte aus dem Template
@@ -408,8 +455,12 @@ Zeitraum anpassen.“ Keine Ausnahmetexte, keine Entschuldigungen, keine Ausrufe
   `getPlugin('api')`, `getPlugin('fetch')`; Klassen `modal-ajax-form`, `confirmation-link`, `api-link`.
 - Ajax-Antworten an eigene Controller mit `X-Requested-With: XMLHttpRequest` (Symfony `isXmlHttpRequest()`),
   POST immer mit CSRF-Token (`csrf_token('<plugin>_<zweck>')`).
+- Kimais `alert`-Plugin (`question`, `error`, `warning`, `info`, `success`) setzt Texte als **HTML** ein. Texte aus
+  Daten (Namen, Server-Antworten, `data-*`-Attribute) MÜSSEN vorher mit `KimaiPluginUi.escapeHtml(text)` (seit 0.3)
+  maskiert werden. Eigenes JS DARF `innerHTML`/`insertAdjacentHTML` nicht mit solchen Daten füllen – `textContent`
+  bzw. `createElement` benutzen.
 - Kit-API: `window.KimaiPluginUi` (`undoToast`, `toast`, `reloadWithToast`, `post(url, token, ids, params?)`,
-  `selectedIds`, `select`, `update`), Attribute `data-kpu-post`/`-token`/`-ids`/`-params`/`-question`, Events
+  `selectedIds`, `select`, `update`, `escapeHtml`), Attribute `data-kpu-post`/`-token`/`-ids`/`-params`/`-question`, Events
   `kpu:selection-change`, `kpu:bulk-done`, `kpu:post-done`, `kpu:undo-done` und `kpu.reload` – siehe Kopf von `kit/js/kit.js`.
   Eigene Kopien dieser Mechanik (`data-<plugin>-post`, eigene Gruppen-Checkbox-Skripte) DÜRFEN NICHT sein.
 

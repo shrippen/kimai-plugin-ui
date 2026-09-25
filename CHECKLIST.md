@@ -14,6 +14,7 @@ Nicht zutreffende Punkte mit „n/a“ markieren.
 - [ ] `PageSetup` mit Titel „Bereich · Zeitraum“, `setActionName()` gesetzt, `setHelp(<volle URL>)` gesetzt (2.3, 2.4)
 - [ ] Keine zweite Überschrift (`<h1>`/`<h2>`) im Inhalt; Kontext über `kit.context_line` (2.3)
 - [ ] Seitenaktionen nur über `PageActionsEvent`-Subscriber, keine Textknöpfe im Inhalt (2.3)
+- [ ] Aktionsschlüssel = passender Kimai-Icon-Alias (bzw. FA-Klasse), keine Option `icon` mit anderem Schlüssel – auch Untermenüs zeigen so das richtige Icon (2.3)
 
 ## Muster
 - [ ] Zeitraum über `kit.period_nav` (nur unterstützte Einheiten) oder Kimai-Picker; Zeitraum steht in der URL (3.1)
@@ -26,6 +27,7 @@ Nicht zutreffende Punkte mit „n/a“ markieren.
 - [ ] Regelverstöße/Hinweise als `status_badge('warning', grund)`, nicht als `requested` (3.3)
 - [ ] Kennzahlen über `kit.kpi_bar`: ≤ 4 Kacheln, genau eine hervorgehoben (3.4)
 - [ ] Destruktives mit Kimai-Modal (`addDelete`, `confirmation-link`, `question`); kein `confirm()` (3.5)
+- [ ] `data-kpu-question`/`question` sind reiner Text ohne HTML (3.5)
 - [ ] Umkehrbares sofort + Rückgängig; Undo-Route vorhanden, mit CSRF (3.5)
 - [ ] Einzel-Sofortaktionen im „…“-Menü/als Seitenaktion über `data-kpu-post` (+ `data-kpu-token`, `data-kpu-ids`), `url` = `'#'`; Route antwortet JSON `{message, undo?}` bzw. 4xx `{message}` (3.5)
 - [ ] Undo-Route prüft serverseitig: gleicher Benutzer, gleiche Sitzung (Session-Eintrag), ≤ 15 min, nur IDs/Zustand der eigenen Aktion; Rechte-Ausnahme nur wie in 3.5 freigegeben (3.5)
@@ -40,7 +42,7 @@ Nicht zutreffende Punkte mit „n/a“ markieren.
 - [ ] Lange Datumsangaben über `format_date(…, locale: app.user.locale, timezone: false)`, nicht `date_format` (4)
 
 ## Sprache und Übersetzungen
-- [ ] Begriffe laut Glossar (Benutzer, Tätigkeit, Funktion, Gage, Abrechnen, Abgerechnet, …) (5)
+- [ ] Begriffe laut Glossar (Benutzer, Tätigkeit, Funktion, Gage, Abrechnen, Abgerechnet, Genehmigen/Ablehnen, Fahrt, Arbeitsweg, Dienstreise, Beleg, …) (5)
 - [ ] Knöpfe = ein Verb; Meldungen = was passiert ist + was zu tun ist (5)
 - [ ] Alle Texte über Keys mit Plugin-Präfix; kein Text hart im Template/PHP/JS (6)
 - [ ] Keine Core-Keys überschrieben; nichts in die Domain `kpu` geschrieben (6)
@@ -52,4 +54,5 @@ Nicht zutreffende Punkte mit „n/a“ markieren.
 - [ ] Dunkelmodus-Screenshot im PR; keine Hex-/rgb-/Namensfarben, kein Inline-`<style>` im Inhalt (8)
 - [ ] Menüeintrag im passenden Core-Bereich, Icon als Kimai-Alias wo möglich (9)
 - [ ] Kein Inline-JS-Handler; JS startet auf `kimai.initialized`; POSTs mit CSRF (10)
+- [ ] Daten-Texte für Kimais `alert`-Plugin mit `KimaiPluginUi.escapeHtml()` maskiert; kein `innerHTML` mit Daten (10)
 - [ ] `bin/console lint:twig <bundle>/Resources/views` grün
