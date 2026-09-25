@@ -79,8 +79,9 @@
         {label: 'Offen', value: (5 * 3600 + 120)|duration, hint: '3 Einträge'},
         {label: 'Abgerechnet', value: (270 * 3600 + 1920)|duration},
         {label: 'Betrag offen', value: 1500.5|money('EUR'), highlight: true},
+        {# details: ein Eintrag bricht nie um; zu lange Labels kürzt die Kachel mit "…" (seit 0.3) #}
         {label: 'Zuschläge', value: 412.5|money('EUR'), url: '#', details: [
-            {label: '25 %', value: 90|money('EUR')},
+            {label: '25 % Nachtzuschlag', value: 90|money('EUR')},
             {label: '50 %', value: 202.5|money('EUR')},
             {label: '100 %', value: 120|money('EUR')},
         ]},
@@ -133,6 +134,13 @@
                                     'data-kpu-params': {action: 'mark'}|json_encode,
                                 }},
                                 'edit': {url: urls.modal, class: 'modal-ajax-form', title: 'edit'},
+                                {# Endgültig, aber nicht destruktiv: data-kpu-question (reiner Text – kit.js maskiert ihn, seit 0.3) #}
+                                'locked': {url: '#', title: 'Abschließen', translation_domain: 'messages', attr: {
+                                    'data-kpu-post': urls.post,
+                                    'data-kpu-token': csrf_token('kpu_demo'),
+                                    'data-kpu-ids': row.id,
+                                    'data-kpu-question': 'Eintrag von ' ~ row.user ~ ' <b>abschließen</b>? Danach keine Änderungen mehr.',
+                                }},
                                 'trash': {url: '#', class: 'confirmation-link text-red', attr: {'data-question': 'confirm.delete'}, title: 'trash'},
                             }) }}
                         </td>
