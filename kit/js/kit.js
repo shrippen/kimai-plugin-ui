@@ -11,6 +11,12 @@
  *   KimaiPluginUi.reloadWithToast(message, undo?)  – Seite neu laden und danach den Hinweis zeigen
  *   KimaiPluginUi.post(url, token, ids, params?)   – POST (FormData: _token, ids[], params) und JSON-Antwort
  *   KimaiPluginUi.setTranslations({...})           – Texte (setzt assets.html.twig aus der Domain "kpu")
+ *   KimaiPluginUi.escapeHtml(text)                 – (seit 0.3) Text für HTML maskieren, z. B. vor eigenen Aufrufen von
+ *                                                    kimai.getPlugin('alert').question()/error()/…, die HTML einsetzen
+ *
+ * Sicherheit: kit.js setzt nie HTML aus Attributen oder Antworten ein (nur textContent). Texte für Kimais alert-Plugin
+ * (data-kpu-question, Fehlermeldungen) werden maskiert – data-kpu-question ist reiner Text, HTML darin wird angezeigt,
+ * nicht ausgeführt.
  *
  * Markup, das kit.js ohne eigenes Skript versteht:
  *   input.kpu-select[data-kpu-form][data-kpu-groups="g1 g2"]  – Zeilen-Checkbox (kit.bulk_checkbox), Gruppen-Schlüssel optional
@@ -20,7 +26,7 @@
  *   [data-kpu-post="<url>"][data-kpu-token][data-kpu-ids="1,2"][data-kpu-params='{"k":"v"}'][data-kpu-question]
  *        – Sofort-Aktion per Klick (z. B. Eintrag im "…"-Menü): POST mit _token, ids[], params; Accept: application/json.
  *          JSON {message, undo?} -> Seite neu laden + Hinweis (mit "Rückgängig"); andere Antwort -> Seite neu laden;
- *          Fehler -> Kimai-Alert. data-kpu-question nur für Endgültiges (Kimai-Bestätigungsmodal vorher).
+ *          Fehler -> Kimai-Alert. data-kpu-question nur für Endgültiges (Kimai-Bestätigungsmodal vorher; reiner Text).
  *   Event "kpu.reload" auf document (z. B. data-form-event eines Modal-Formulars) -> Seite neu laden
  *
  * Events (bubbles):
@@ -37,7 +43,7 @@
 (function (window, document) {
     'use strict';
 
-    var VERSION = '0.2.0';
+    var VERSION = '0.3.0';
     if (window.KimaiPluginUi && window.KimaiPluginUi.version) {
         return; // bereits von einem anderen Plugin auf dieser Seite geladen
     }
@@ -224,19 +230,31 @@
         update(form);
     }
 
+    /**
+     * Text für HTML maskieren. Kimais alert-Plugin (question, error, warning, info, success) setzt seine Texte als HTML
+     * ein (template.innerHTML) – Texte aus Attributen (data-kpu-question) oder Server-Antworten ({message}) müssen
+     * deshalb vorher maskiert werden, sonst wird z. B. ein Benutzer- oder Projektname im Text als HTML ausgeführt.
+     */
+    function escapeHtml(text) {
+        return String(text === null || text === undefined ? '' : text).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
     function ask(question, callback) {
         var alert = getPlugin('alert');
         if (alert !== null && typeof alert.question === 'function') {
-            alert.question(question, callback);
+            alert.question(escapeHtml(question), callback); // Kimai setzt den Text als HTML ein
         } else {
-            callback(window.confirm(question));
+            callback(window.confirm(question)); // nur Text, kein HTML
         }
     }
 
     function showError(message) {
         var alert = getPlugin('alert');
         if (alert !== null) {
-            alert.error(t('error'), message || null);
+            // Kimai setzt Titel und Text als HTML ein; message kommt aus der Server-Antwort
+            alert.error(escapeHtml(t('error')), message ? escapeHtml(message) : null);
         } else {
             window.alert(t('error') + (message ? '\n' + message : ''));
         }
@@ -567,6 +585,7 @@
         select: select,
         undoToast: undoToast,
         reloadWithToast: reloadWithToast,
+        escapeHtml: escapeHtml,
         setTranslations: setTranslations
     };
 

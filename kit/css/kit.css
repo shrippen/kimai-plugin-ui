@@ -45,6 +45,7 @@
 }
 .kpu-kpis-1 { grid-template-columns: minmax(0, 1fr); }
 .kpu-kpi {
+    min-width: 0;
     margin-bottom: 0;
     color: inherit;
     text-decoration: none;
@@ -71,10 +72,24 @@ a.kpu-kpi:hover {
     font-size: .8125rem;
     font-variant-numeric: tabular-nums;
 }
+/* Ein Eintrag bricht nie in sich um: Label und Wert bleiben auf einer Zeile. Wird die Kachel zu schmal (2 Spalten
+   bei 360–390 px), kürzt das Label mit "…" (voller Text im title), der Wert bleibt immer ganz sichtbar. Ganze
+   Einträge dürfen in die nächste Zeile rutschen. */
 .kpu-kpi-detail {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .25rem;
+    min-width: 0;
+    max-width: 100%;
     white-space: nowrap;
 }
+.kpu-kpi-detail-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 .kpu-kpi-detail-value {
+    flex: 0 0 auto;
     color: var(--tblr-body-color);
     font-weight: var(--tblr-font-weight-medium);
 }
