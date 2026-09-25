@@ -122,6 +122,17 @@ Kit-Version: siehe [VERSION](VERSION). Pfade wie `/opt/kimai/templates/...` bezi
     Kopf (bei `DataTable` über Spaltenoption `'html_after' => '<input … class="form-check-input kpu-select-all" data-kpu-form="…">'`),
     `kit.bulk_bar(form_id, actions)` unter der Tabelle.
   - Das Formular schickt `ids[]` und `_token` (CSRF, Token-ID pro Aktion) an `action.url`.
+  - **Gruppen-Auswahl** (seit 0.2): Jede Zeile nennt ihre Gruppen-Schlüssel, `kit.bulk_checkbox(form_id, id, null, ['c5', 'c5-p12'])`;
+    die Gruppen-Checkbox wählt nur Zeilen mit ihrem Schlüssel: im Gruppenkopf
+    `kit.group_header(…, {…, select: {form: form_id, group: 'c5-p12'}})`, im Tabellenkopf
+    `'html_after': kit.bulk_select_group(form_id, 'c5', label)`. Verschachtelt funktioniert es von selbst (Kunde `c5`
+    wählt alle Zeilen des Kunden, Projekt `c5-p12` nur seine). Die Checkbox zeigt „teilweise“ (indeterminate), folgt
+    Einzelklicks, „Alle auswählen“ und „Auswahl aufheben“ und ist ohne auswählbare Zeilen deaktiviert. Schlüssel ohne
+    Leerzeichen, eindeutig pro Formular. Statt Schlüssel geht `ids: [..]`. Eigene „Gruppe auswählen“-Skripte DÜRFEN NICHT sein.
+  - Seiten-JS, das auf die Auswahl reagiert (Summe der Auswahl, Knöpfe aktivieren), hört auf
+    `kpu:selection-change` (`event.detail = {form: '<form-id>', ids: ['101', …], count}`, bubbles bis `document`).
+    Es kommt nach jeder Änderung: Zeile, Gruppe, alle, „Auswahl aufheben“, `KimaiPluginUi.select()`, Neuladen der Tabelle.
+    Wer Checkboxen per JS setzt, ruft danach `KimaiPluginUi.update()` (oder gleich `KimaiPluginUi.select(form, ids, true)`).
   - Kimais eigenes Batch-Formular (`DataTable::setBatchForm()` + `App\Form\MultiUpdate\MultiUpdateTable`) DARF für
     **endgültige** Sammelaktionen auf einer paginierten Entitätsliste benutzt werden; es fragt immer per Modal nach.
     Beide Mechanismen DÜRFEN NICHT in derselben Tabelle gemischt werden.
@@ -138,22 +149,30 @@ bleibt Kimais `widgets.label_boolean()`.
 | Schlüssel | Deutsch | Englisch | Klasse | Bedeutung |
 |---|---|---|---|---|
 | `open` | Offen | Open | `bg-secondary-lt` (grau) | AB: noch nicht abgerechnet · DZ: Tag ohne Eintrag |
-| `requested` | Beantragt | Requested | `bg-warning-lt` (gelb) | HB: Abwesenheit wartet · DZ: Warnung |
+| `requested` | Beantragt | Requested | `bg-warning-lt` (gelb) | HB: Abwesenheit wartet auf Genehmigung |
 | `approved` | Genehmigt | Approved | `bg-success-lt` (grün) | HB: Abwesenheit genehmigt |
 | `rejected` | Abgelehnt | Rejected | `bg-danger-lt` (rot) | HB: Abwesenheit abgelehnt |
 | `billed` | Abgerechnet | Billed | `bg-blue-lt` (blau) | AB: exportiert (Kimai `exported`) · HB: in Abrechnung übernommen |
 | `locked` | Gesperrt | Locked | `bg-purple-lt` (violett) | HB: Monat gesperrt · Kimai-Lockdown |
+| `warning` | Warnung | Warning | `bg-orange-lt` (orange) + Icon `warning` (!) | DZ: Verstoß gegen Regeln (Ruhezeit, Höchstarbeitszeit) – Grund im `tooltip` |
 
+- **`warning` vs. `requested`:** In Tabler sind `warning` und `yellow` dieselbe Farbe. Damit „Warnung“ nie wie „Beantragt“
+  aussieht, ist `warning` orange (`bg-orange-lt`) und trägt immer das Ausrufezeichen; `requested` bleibt gelb ohne Icon.
+  „Warnung“ ist kein Bearbeitungsstand, sondern ein Hinweis: Er DARF neben einem Status-Badge stehen
+  (`{{ kit.status_badge('open') }} {{ kit.status_badge('warning', 'drehzettel.warning.rest_time'|trans) }}`).
+  Der Grund MUSS im `tooltip` (oder daneben als Text) stehen.
 - `billed` nutzt bewusst `bg-blue-lt` statt `bg-primary-lt`: die Primärfarbe ist in Tabler umstellbar, der Status soll blau bleiben.
 - Neue Status MÜSSEN erst hier und im Kit ergänzt werden. Durchstreichen, Klartext oder eigene Chips als Status DÜRFEN NICHT sein.
 - Status DARF NICHT allein über Farbe vermittelt werden (Text im Badge ist Pflicht).
 
 ### 3.4 Kennzahlen (Entscheidung 3.5 a) – Kit
 
-`kit.kpi_bar([{label, value, hint?, highlight?, url?}])` direkt am Anfang von `main`.
+`kit.kpi_bar([{label, value, hint?, highlight?, url?, details?}])` direkt am Anfang von `main`.
 
 - Höchstens **4** Kacheln (weitere schneidet das Makro ab), genau **eine** mit `highlight: true` (die wichtigste Zahl).
 - `value` MUSS mit Kimai-Filtern formatiert sein (Abschnitt 4). Kein eigener Hintergrund, keine weißen Texte.
+- Aufschlüsselung einer Kachel (z. B. Drehzettel-Zuschläge je Stufe) über `details: [{label, value}]` (seit 0.2), kurze
+  Labels, Werte formatiert; höchstens etwa 4 Einträge – mehr gehört in eine Tabelle.
 - Summen pro Gruppe gehören in `kit.group_header(title, color, sums, actions, options)`: Farbpunkt über Kimais
   `widgets.label_dot`, Summen rechts, „…“ über `widgets.table_actions`. Als Tabellenzeile mit
   `{as_row: true, colspan: n}`, Untergruppe mit `{level: 2}`.
@@ -170,20 +189,93 @@ bleibt Kimais `widgets.label_boolean()`.
   - Sammelaktion: `ajax: true` in `kit.bulk_bar`. Der Controller antwortet bei `Accept: application/json` mit
     `{"message": "3 Einträge abgerechnet", "undo": {"url": "…", "token": "…", "ids": [..]}}`; ohne JS (normaler POST)
     mit Redirect und `addFlash('kpu_result', …)`.
+  - **Einzelaktion im „…“-Menü oder als Seitenaktion** (seit 0.2): Attribute statt eigenem Skript, kit.js erledigt den Rest.
+    Twig (`widgets.table_actions`):
+    ```twig
+    'success': {url: '#', title: 'holiday.approve', attr: {
+        'data-kpu-post': path('holiday_absence_bulk_approve'),
+        'data-kpu-token': csrf_token('holiday_absence'),
+        'data-kpu-ids': absence.id,                                 {# optional, "1,2" oder JSON-Array -> ids[] #}
+        'data-kpu-params': {mode: 'single'}|json_encode,            {# optional, weitere POST-Felder #}
+    }}
+    ```
+    PHP (`PageActionsEvent` im Actions-Subscriber – `attr` wird von Kimais `button`-Makro 1:1 ausgegeben, in
+    Knopfleiste und „…“-Menü):
+    ```php
+    $event->addAction('success', [
+        'url' => '#',
+        'title' => 'holiday.approve',
+        'attr' => [
+            'data-kpu-post' => $this->path('holiday_absence_bulk_approve'),
+            'data-kpu-token' => $this->csrfTokenManager->getToken('holiday_absence')->getValue(),
+            'data-kpu-ids' => (string) $absence->getId(),
+        ],
+    ]);
+    ```
+    kit.js schickt `POST` mit `_token`, `ids[]`, Parametern, `Accept: application/json`, `X-Requested-With: XMLHttpRequest`.
+    Antwort JSON `{message, undo?}` → Seite neu laden + Hinweis mit „Rückgängig“; Redirect oder HTML → Seite neu laden
+    (kit.js folgt dem Redirect nicht selbst, damit `kpu_result`-Flashes erhalten bleiben); 4xx/5xx → Kimai-Fehler-Alert
+    mit `message` aus der JSON-Antwort. Ein eigener Listener auf `kpu:post-done` kann mit `preventDefault()` das
+    Neuladen verhindern und die Seite selbst aktualisieren. `url` bleibt `'#'` (ein GET auf die POST-Route wäre ein 405).
+    `data-kpu-question` gibt es nur für Endgültiges; Destruktives bleibt bei `addDelete()`/`confirmation-link`.
   - Einzelaktion aus eigenem JS: `KimaiPluginUi.undoToast(message, {url, token, ids})` oder
     `KimaiPluginUi.reloadWithToast(message, undo)`.
   - Die Undo-Route nimmt `_token` + `ids[]` per POST und antwortet `{"message": "…"}`.
 
+#### Rückgängig-Fenster (seit 0.2)
+
+Rückgängig macht **genau die eigene Aktion** ungeschehen. Dafür gilt:
+
+1. **Wer:** nur der Benutzer, der die Aktion ausgeführt hat.
+2. **Wo:** nur in derselben Sitzung. Die Aktion legt beim Ausführen einen Eintrag in der Session ab
+   (`$session->set('<plugin>.undo.<aktions-id>', ['user' => $userId, 'ids' => $ids, 'before' => $vorherigerZustand, 'at' => time()])`);
+   die `undo`-Daten der Antwort nennen die Aktions-ID (als Parameter oder in der URL), die Undo-Route liest nur diesen Eintrag.
+   IDs aus dem Request allein reichen NIE.
+3. **Wie lange:** höchstens **15 Minuten** nach der Aktion (der Toast ist 10 s sichtbar, das Fenster deckt Neuladen und
+   Nachdenken ab). Danach ist der Eintrag ungültig und wird gelöscht; ebenso nach erfolgreichem Rückgängig.
+4. **Was:** nur die IDs dieser Aktion, nur zurück in den Zustand davor, und nur, wenn der Datensatz seitdem nicht
+   anderweitig geändert wurde (sonst Fehler mit Hinweis). CSRF-Token wie bei jeder POST-Route.
+5. **Berechtigung:** Innerhalb dieses Fensters DARF die Undo-Route auf eine Berechtigung verzichten, die sonst für die
+   Rückrichtung nötig ist – freigegeben vom Product Owner für **Abrechnung**: das Zurücksetzen einer eigenen
+   Sammelaktion „Abgerechnet“ ohne `edit_exported_timesheet`. Die Berechtigung für die **Hinrichtung** MUSS bei der
+   Aktion geprüft worden sein. Das Fenster DARF NIE mehr erlauben als die Umkehr der eigenen Aktion (keine anderen
+   IDs, Benutzer oder Sitzungen, keine weiteren Felder). Nach Ablauf gelten wieder die normalen Kimai-Rechte.
+6. Jede Ausnahme nach Punkt 5 für ein anderes Plugin oder eine andere Berechtigung braucht eine eigene Freigabe und
+   wird hier eingetragen.
+
 ### 3.6 Leerzustand und Rückmeldung (Entscheidung 3.7 a) – Kit
 
-- Leere Liste: `kit.empty_state(message, link_url, link_label)` – gleiche Optik wie Kimais `widgets.nothing_found()`
-  plus Link zum naheliegenden nächsten Schritt („Filter zurücksetzen“, „Abwesenheit anlegen“). Ohne Argumente
-  zeigt es Kimais Standardtext. Emojis, Tabellenzeilen mit „Keine Einträge“ oder graue Absätze DÜRFEN NICHT sein.
+- Leere Liste: `kit.empty_state(message, link_url, link_label, link_class, link_attr)` – gleiche Optik wie Kimais
+  `widgets.nothing_found()` plus Link zum naheliegenden nächsten Schritt („Filter zurücksetzen“, „Abwesenheit anlegen“).
+  Ohne Argumente zeigt es Kimais Standardtext. Emojis, Tabellenzeilen mit „Keine Einträge“ oder graue Absätze DÜRFEN NICHT sein.
+- Öffnet der nächste Schritt ein Formular, dann im Kimai-Modal: `link_class` = `'modal-ajax-form'`
+  (Kimai 2.67 `KimaiAjaxModalForm` hört auf Klicks auf `.modal-ajax-form` und lädt `data-href` oder `href` mit
+  `X-Requested-With: Kimai-Modal`):
+  `{{ kit.empty_state('holiday.absence.empty'|trans, path('holiday_absence_create'), 'holiday.absence.create'|trans, 'modal-ajax-form') }}`.
+  `link_attr` setzt weitere Attribute (z. B. `data-kpu-post`/`data-kpu-token` für eine Sofort-Aktion).
 - Kimai blendet **Erfolgs-Flashes aus** (`base.html.twig`, `page_content_start`). Ergebnisse mit Zahlen (Import,
   Synchronisierung, Sammelaktion ohne JS) MÜSSEN deshalb sichtbar gemacht werden:
   Controller `$this->addFlash('kpu_result', $translator->trans('holiday.import.result', ['%count%' => $n]))`,
   Template `{% block page_content_start %}{{ kit.result_callouts() }}{{ parent() }}{% endblock %}`
   oder direkt `kit.result_callout(message)`.
+- **Ergebnis-Hinweise und Modale/Ajax:** Ein Flash wird von der ersten Seite verbraucht, die gerendert wird – auch wenn
+  sie nur im Hintergrund per `fetch()` geholt wird. Kimai 2.67 tut das an zwei Stellen:
+  - `KimaiAjaxModalForm` schickt das Modal-Formular per `fetch(…, {redirect: 'follow'})`. Ein normaler 302-Redirect
+    wird im Hintergrund verfolgt, die Zielseite rendert und verbraucht `kpu_result`; danach schließt das Modal nur,
+    feuert `data-form-event` und lädt **nicht** neu. Der Hinweis ist verloren.
+  - `KimaiDatatable` lädt bei einem Reload-Event (`DataTable::setReloadEvents()`, `reload`-Option) die Seite per
+    `fetch()` und ersetzt nur `section.content` – auch das verbraucht Flashes, die Kennzahlen bleiben alt.
+  Deshalb MUSS ein Modal-Formular, dessen Erfolg einen `kpu_result`-Hinweis setzt (oder Kennzahlen ändert), so antworten:
+  - **Standard:** `return $this->redirectToRouteAfterCreate('<route>', [...]);` (Kimai `App\Controller\AbstractController`):
+    HTTP 201 mit Header `x-modal-redirect`; Kimais `KimaiFetch` macht daraus `window.location = url`, die Seite lädt
+    komplett und zeigt `kpu_result`. Ohne JS leitet der Meta-Refresh im Antworttext weiter.
+  - **Seite behält ihre URL (Filter, Zeitraum):** Formular-Option `'attr' => ['data-form-event' => 'kpu.reload']`
+    und nach Erfolg im Modal `return new Response('');` (leere 200: Kimai wertet „kein Formular in der Antwort“ als
+    Erfolg, feuert `kpu.reload`, kit.js lädt die Seite neu). Ohne Modal (normale Seite) weiter `redirectToRoute()`.
+  - Solche Seiten DÜRFEN für diese Formulare kein `setReloadEvents()` nutzen. Reload-Events bleiben für Änderungen ohne
+    Ergebnis-Hinweis (z. B. Kimai-Timesheet-Modal auf einer Plugin-Liste).
+  Helfer für beide Fälle: README, Abschnitt „Modal-Formulare mit Ergebnis-Hinweis“.
+- Sofort-Aktionen über `data-kpu-post` sind davon nicht betroffen: kit.js folgt Redirects nicht im Hintergrund und lädt neu.
 - Reine Bestätigungen ohne Information („Gespeichert“) bleiben wie in Kimai stumm (`flashSuccess`).
 - Fehler: `flashError('<key>')` bzw. `flashUpdateException($e)` (Domain `flashmessages`), in JS
   `kimai.getPlugin('alert').error(title, message)`. Rohe Exception-Texte DÜRFEN NICHT als Übersetzungskey verwendet werden.
@@ -199,7 +291,8 @@ bleibt Kimais `widgets.label_boolean()`.
   `{% extends kimai_context.modalRequest ? 'form.html.twig' : 'base.html.twig' %}` und im `main`-Block
   `{% embed (kimai_context.modalRequest ? 'default/_form_modal.html.twig' : 'default/_form.html.twig') with {title: …, form: form, back: path(…)} %}`.
   So rendert dasselbe Template als Modal oder als Seite (Karte mit Titel, Fuß mit Speichern/Zurück).
-  Nach Erfolg antwortet der Controller mit Redirect (Kimai lädt die Liste neu).
+  Nach Erfolg antwortet der Controller wie in Kimai mit Redirect plus `data-form-event` für die DataTable – setzt er
+  einen `kpu_result`-Hinweis, dann nach 3.6 mit `redirectToRouteAfterCreate()` bzw. leerer 200 + `kpu.reload`.
 - Lange Editoren (Drehzettel-Regelwerk) DÜRFEN eine eigene Seite mit `default/_form.html.twig` sein.
 - Validierung über Symfony-Constraints (`validators`-Domain), nicht über eigene JS-Meldungen.
 
@@ -265,6 +358,10 @@ Zeitraum anpassen.“ Keine Ausnahmetexte, keine Entschuldigungen, keine Ausrufe
 - Kein sichtbarer Text im Template, in PHP oder in JS ohne Key. JS bekommt Texte aus dem Template
   (`'key'|trans|e('js')` oder `data-*`-Attribute).
 - Jede Datei MUSS für **de** und **en** vorhanden sein, mit gleichem Key-Bestand.
+- **Plural mit `%count%`:** Die Intervalle MÜSSEN jede Zahl ab 0 abdecken. Symfony wirft sonst
+  `InvalidArgumentException: Unable to choose a translation` (geprüft in Kimai 2.67 – `{1}…|]1,Inf[…` stürzt bei 0 ab).
+  Richtig: `{0}Keine Einträge|{1}Ein Eintrag|]1,Inf[%count% Einträge` oder kurz `{1}%count% Eintrag|[0,Inf[%count% Einträge`
+  (das erste passende Intervall gewinnt). Die Zahl 0 gehört in jeden Test mit Plural.
 - **Kit-Domain `kpu`:** Jedes Plugin bringt `Resources/translations/kpu.de.xlf`/`kpu.en.xlf` mit. Sind mehrere Plugins
   installiert, lädt Symfony alle Dateien in dieselbe Domain; bei gleichem Key gewinnt die zuletzt geladene. Das ist
   unschädlich, solange die Inhalte gleich sind. Deshalb:
@@ -311,8 +408,10 @@ Zeitraum anpassen.“ Keine Ausnahmetexte, keine Entschuldigungen, keine Ausrufe
   `getPlugin('api')`, `getPlugin('fetch')`; Klassen `modal-ajax-form`, `confirmation-link`, `api-link`.
 - Ajax-Antworten an eigene Controller mit `X-Requested-With: XMLHttpRequest` (Symfony `isXmlHttpRequest()`),
   POST immer mit CSRF-Token (`csrf_token('<plugin>_<zweck>')`).
-- Kit-API: `window.KimaiPluginUi` (`undoToast`, `toast`, `reloadWithToast`, `post`, `selectedIds`, Events
-  `kpu:bulk-done`, `kpu:undo-done`) – siehe Kopf von `kit/js/kit.js`.
+- Kit-API: `window.KimaiPluginUi` (`undoToast`, `toast`, `reloadWithToast`, `post(url, token, ids, params?)`,
+  `selectedIds`, `select`, `update`), Attribute `data-kpu-post`/`-token`/`-ids`/`-params`/`-question`, Events
+  `kpu:selection-change`, `kpu:bulk-done`, `kpu:post-done`, `kpu:undo-done` und `kpu.reload` – siehe Kopf von `kit/js/kit.js`.
+  Eigene Kopien dieser Mechanik (`data-<plugin>-post`, eigene Gruppen-Checkbox-Skripte) DÜRFEN NICHT sein.
 
 ## 11. Kit-Bausteine (Übersicht)
 
@@ -322,13 +421,14 @@ Zeitraum anpassen.“ Keine Ausnahmetexte, keine Entschuldigungen, keine Ausrufe
 | Kontextzeile | – | `context_line(parts)` |
 | Zeitraum | Year/Month/WeekPickerType (eine Einheit) | `period_nav(…)` |
 | Tabelle, „…“-Menü | `DataTable`, `macros/datatables.html.twig`, `widgets.table_actions` | – |
-| Sammelaktion | `setBatchForm()` (nur endgültig) | `bulk_bar`, `bulk_checkbox`, `bulk_select_all` |
-| Status | `widgets.label_boolean` (Ja/Nein) | `status_badge(status)` |
+| Sammelaktion | `setBatchForm()` (nur endgültig) | `bulk_bar`, `bulk_checkbox`, `bulk_select_all`, `bulk_select_group`, `kpu:selection-change` |
+| Sofort-Aktion im „…“-Menü | `widgets.table_actions`, `PageActionsEvent` (`attr`) | `data-kpu-post` (kit.js) |
+| Status, Warnung | `widgets.label_boolean` (Ja/Nein) | `status_badge(status, tooltip)` |
 | Kennzahlen | `macros/status.html.twig` (Navbar-Status) | `kpi_bar(tiles)` |
-| Gruppenkopf | `widgets.label_dot` | `group_header(…)` |
-| Leerzustand | `widgets.nothing_found()` | `empty_state(…)` |
-| Ergebnis | – (Kimai blendet Erfolg aus) | `result_callout`, `result_callouts` |
+| Gruppenkopf | `widgets.label_dot` | `group_header(…)` (mit `select`) |
+| Leerzustand | `widgets.nothing_found()` | `empty_state(…)` (Link auch als Modal) |
+| Ergebnis | – (Kimai blendet Erfolg aus); nach Modal `redirectToRouteAfterCreate()` | `result_callout`, `result_callouts`, `kpu.reload` |
 | Bestätigen | `confirmation-link`, `addDelete()`, `alert.question` | – |
-| Rückgängig | – | `KimaiPluginUi.undoToast` |
+| Rückgängig | – | `KimaiPluginUi.undoToast`, Rückgängig-Fenster (3.5) |
 | Formular | FormTypes, `default/_form.html.twig`, `modal-ajax-form` | – |
 | Tagesraster | – | bewusst nicht im Kit (Drehzettel-spezifisch) |
