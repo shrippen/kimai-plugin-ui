@@ -9,6 +9,7 @@
         return $this->render('@AbrechnungBundle/abrechnung/index.html.twig', ['page_setup' => $page, …]);
 
     Alle Beispieldaten sind hier im Template gesetzt, damit die Seite ohne Controller-Daten rendert.
+    Ziel-URLs kommen optional aus kpu_demo_urls (Test-Controller); ohne sie zeigen alle Links auf '#'.
     Die deutschen Beispieltexte sind nur der Kürze halber fest eingetragen – im Plugin kommt JEDER Text
     aus einem Übersetzungskey mit Plugin-Präfix (GUIDELINES.md, Abschnitt Übersetzungen).
 #}
@@ -26,7 +27,21 @@
 {% block javascripts %}
     {{ parent() }}
     {% include '@DemoBundle/_kit/assets.html.twig' with {kpu_part: 'js'} %}
+    <script>
+        // Seiten-JS (nur Demo): auf die Auswahl reagieren und den Rückgängig-Toast direkt auslösen
+        document.addEventListener('kpu:selection-change', function (event) {
+            if (event.detail.form !== 'kpu-demo-bulk') { return; }
+            document.getElementById('kpu-demo-selection').textContent = event.detail.count + ': ' + event.detail.ids.join(', ');
+        });
+        document.addEventListener('kimai.initialized', function () {
+            document.getElementById('kpu-demo-toast').addEventListener('click', function () {
+                KimaiPluginUi.undoToast('3 Einträge abgerechnet', {url: '#', token: 'x', ids: [101, 102, 103]});
+            });
+        });
+    </script>
 {% endblock %}
+
+{% set urls = {bulk: '#', undo: '#', post: '#', modal: '#'}|merge(kpu_demo_urls ?? {}) %}
 
 {# ---------- Seitenkopf: Kontextzeile + Zeitraum ---------- #}
 {% set unit = app.request.query.get('unit', 'month') %}
@@ -64,7 +79,11 @@
         {label: 'Offen', value: (5 * 3600 + 120)|duration, hint: '3 Einträge'},
         {label: 'Abgerechnet', value: (270 * 3600 + 1920)|duration},
         {label: 'Betrag offen', value: 1500.5|money('EUR'), highlight: true},
-        {label: 'Resturlaub', value: 12|amount, hint: 'Tage', url: '#'},
+        {label: 'Zuschläge', value: 412.5|money('EUR'), url: '#', details: [
+            {label: '25 %', value: 90|money('EUR')},
+            {label: '50 %', value: 202.5|money('EUR')},
+            {label: '100 %', value: 120|money('EUR')},
+        ]},
     ]) }}
 
     {# Gruppierte Tabelle im Kimai-DataTable-Look (Kopf/Fuß aus macros/datatables.html.twig) #}
@@ -76,52 +95,69 @@
         'status': {class: 'w-min', orderBy: false, title: 'status'},
         'actions': {class: 'actions alwaysVisible', orderBy: false},
     } %}
-    {% set rows = [
-        {id: 101, date: date('2026-09-24'), user: 'user1', duration: 3600, status: 'open'},
-        {id: 102, date: date('2026-09-25'), user: 'user1', duration: 60, status: 'billed'},
-        {id: 103, date: date('2026-10-14'), user: 'user2', duration: 10800, status: 'open'},
+    {# Verschachtelte Gruppen: jede Zeile trägt die Schlüssel ihres Kunden und Projekts (groups),
+       die Gruppen-Checkbox im Kopf wählt nur ihre Zeilen (Kunde: alle Projekte, Projekt: nur dessen Zeilen). #}
+    {% set projects = [
+        {key: 'c1-p1', name: 'Website', rows: [
+            {id: 101, date: date('2026-09-24'), user: 'user1', duration: 3600, status: 'open'},
+            {id: 102, date: date('2026-09-25'), user: 'user1', duration: 60, status: 'billed'},
+        ]},
+        {key: 'c1-p2', name: 'App', rows: [
+            {id: 103, date: date('2026-10-14'), user: 'user2', duration: 10800, status: 'open'},
+            {id: 104, date: date('2026-10-15'), user: 'user2', duration: 1800, status: 'warning'},
+        ]},
     ] %}
 
     <div class="card mb-3">
         {{ kit.group_header('ACME', null|colorize('ACME'), [(4 * 3600 + 60)|duration, 0|money('EUR')], {
             'download': {url: '#', title: 'export'},
             'edit': {url: '#', title: 'edit'},
-        }) }}
+        }, {select: {form: 'kpu-demo-bulk', group: 'c1'}}) }}
         {{ tables.datatable_header('kpu_demo', columns, null, {boxClass: 'kpu-table-wrap', columnConfig: false, sticky: false}) }}
-            {{ kit.group_header('Website', null, [(4 * 3600 + 60)|duration], null, {as_row: true, colspan: columns|length, level: 2}) }}
-            {% for row in rows %}
-                <tr>
-                    <td class="{{ datatable_column_class('kpu_demo', 'kpu_select') }}">{{ kit.bulk_checkbox('kpu-demo-bulk', row.id) }}</td>
-                    <td class="{{ datatable_column_class('kpu_demo', 'date') }}">{{ row.date|date_short }}</td>
-                    <td class="{{ datatable_column_class('kpu_demo', 'user') }}">{{ row.user }}</td>
-                    <td class="{{ datatable_column_class('kpu_demo', 'duration') }}">{{ row.duration|duration }}</td>
-                    <td class="{{ datatable_column_class('kpu_demo', 'status') }}">{{ kit.status_badge(row.status) }}</td>
-                    <td class="{{ datatable_column_class('kpu_demo', 'actions') }}">
-                        {{ widgets.table_actions({
-                            'success': {url: '#', title: 'Abrechnen', translation_domain: 'messages'},
-                            'edit': {url: '#', class: 'modal-ajax-form', title: 'edit'},
-                            'trash': {url: '#', class: 'confirmation-link text-red', attr: {'data-question': 'confirm.delete'}, title: 'trash'},
-                        }) }}
-                    </td>
-                </tr>
+            {% for project in projects %}
+                {{ kit.group_header(project.name, null, [(4 * 3600 + 60)|duration], null, {as_row: true, colspan: columns|length, level: 2, select: {form: 'kpu-demo-bulk', group: project.key}}) }}
+                {% for row in project.rows %}
+                    <tr>
+                        <td class="{{ datatable_column_class('kpu_demo', 'kpu_select') }}">{{ kit.bulk_checkbox('kpu-demo-bulk', row.id, null, ['c1', project.key]) }}</td>
+                        <td class="{{ datatable_column_class('kpu_demo', 'date') }}">{{ row.date|date_short }}</td>
+                        <td class="{{ datatable_column_class('kpu_demo', 'user') }}">{{ row.user }}</td>
+                        <td class="{{ datatable_column_class('kpu_demo', 'duration') }}">{{ row.duration|duration }}</td>
+                        <td class="{{ datatable_column_class('kpu_demo', 'status') }}">{{ kit.status_badge(row.status, row.status == 'warning' ? 'Ruhezeit unter 11 Stunden' : null) }}</td>
+                        <td class="{{ datatable_column_class('kpu_demo', 'actions') }}">
+                            {# Sofort-Aktion (umkehrbar) im "…"-Menü: data-kpu-post, kein Modal; destruktiv bleibt beim Kimai-Modal #}
+                            {{ widgets.table_actions({
+                                'success': {url: '#', title: 'Abrechnen', translation_domain: 'messages', attr: {
+                                    'data-kpu-post': urls.post,
+                                    'data-kpu-token': csrf_token('kpu_demo'),
+                                    'data-kpu-ids': row.id,
+                                    'data-kpu-params': {action: 'mark'}|json_encode,
+                                }},
+                                'edit': {url: urls.modal, class: 'modal-ajax-form', title: 'edit'},
+                                'trash': {url: '#', class: 'confirmation-link text-red', attr: {'data-question': 'confirm.delete'}, title: 'trash'},
+                            }) }}
+                        </td>
+                    </tr>
+                {% endfor %}
             {% endfor %}
         {{ tables.data_table_footer(null, null, null) }}
         <div class="card-footer">
             {{ kit.bulk_select_all('kpu-demo-bulk') }}
             <span class="ms-2 text-body-secondary">{{ 'kpu.bulk.select_all'|trans({}, 'kpu') }}</span>
+            {# kpu:selection-change (Seiten-JS im javascripts-Block) schreibt hier die Auswahl hinein #}
+            <span class="ms-3 text-body-secondary" id="kpu-demo-selection" aria-live="polite">0</span>
         </div>
     </div>
 
     {# Sammelaktion: umkehrbar -> sofort + Rückgängig-Toast (ajax); endgültig -> Kimai-Modal (question) #}
     {{ kit.bulk_bar('kpu-demo-bulk', [
-        {label: 'Abrechnen', url: '#', token: csrf_token('kpu_demo'), icon: 'success', ajax: true},
+        {label: 'Abrechnen', url: urls.bulk, token: csrf_token('kpu_demo'), icon: 'success', ajax: true},
         {label: 'Löschen', url: '#', token: csrf_token('kpu_demo'), icon: 'trash', class: 'btn-danger', question: 'confirm.delete'|trans},
     ]) }}
 
     {# Status-Vokabular #}
     <div class="card mb-3">
         <div class="card-body d-flex flex-wrap gap-2">
-            {% for s in ['open', 'requested', 'approved', 'rejected', 'billed', 'locked'] %}
+            {% for s in ['open', 'requested', 'approved', 'rejected', 'billed', 'locked', 'warning'] %}
                 {{ kit.status_badge(s) }}
             {% endfor %}
         </div>
@@ -130,12 +166,9 @@
     {# Leerzustand mit nächstem Schritt #}
     {{ kit.empty_state('Keine offenen Einträge für Mai 2025.', '?unit=month', 'Filter zurücksetzen') }}
     {{ kit.empty_state() }}
+    {# Nächster Schritt im Kimai-Modal: link_class 'modal-ajax-form' (Formular-Controller siehe README, "Modal-Formulare") #}
+    {{ kit.empty_state('Keine Abwesenheiten 2026.', urls.modal, 'Abwesenheit anlegen', 'modal-ajax-form') }}
 
-    {# Rückgängig-Toast direkt auslösen (nur Demo) #}
+    {# Rückgängig-Toast direkt auslösen (nur Demo, Skript im javascripts-Block) #}
     <button type="button" class="btn" id="kpu-demo-toast">Toast zeigen</button>
-    <script>
-        document.getElementById('kpu-demo-toast').addEventListener('click', function () {
-            KimaiPluginUi.undoToast('3 Einträge abgerechnet', {url: '#', token: 'x', ids: [101, 102, 103]});
-        });
-    </script>
 {% endblock %}
