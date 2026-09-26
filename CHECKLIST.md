@@ -25,7 +25,7 @@ Nicht zutreffende Punkte mit „n/a“ markieren.
 - [ ] Kein `btn-xs` (existiert nicht), nur `btn`, `btn-sm`, `btn-icon` (3.2)
 - [ ] Status nur über `kit.status_badge` mit Vokabular-Schlüssel; kein Durchstreichen/Klartext als Status (3.3)
 - [ ] Regelverstöße/Hinweise als `status_badge('warning', grund)`, nicht als `requested` (3.3)
-- [ ] Kennzahlen über `kit.kpi_bar`: ≤ 4 Kacheln, genau eine hervorgehoben (3.4)
+- [ ] Kennzahlen über `kit.kpi_bar`: ≤ 4 Kacheln, genau eine hervorgehoben; `tier` nur, wo eine eskalierende Bedeutung wirklich existiert, nie zusammen mit `highlight` an derselben Kachel (3.4, 8.1)
 - [ ] Destruktives mit Kimai-Modal (`addDelete`, `confirmation-link`, `question`); kein `confirm()` (3.5)
 - [ ] `data-kpu-question`/`question` sind reiner Text ohne HTML (3.5)
 - [ ] Umkehrbares sofort + Rückgängig; Undo-Route vorhanden, mit CSRF (3.5)

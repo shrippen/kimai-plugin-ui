@@ -2,6 +2,21 @@
 
 Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionen nach [SemVer](https://semver.org/lang/de/).
 
+## [0.5.0] – 2026-09-26
+
+`kit.kpi_bar` bekommt Bedeutung statt nur Position. Abwärtskompatibel: ohne `tier` sieht eine Kachel aus wie in 0.4.
+
+### Neu
+- `kit.kpi_bar`: optionales `tier` (0–3) je Kachel und je `details`-Eintrag, gerendert als `kpu-tier`/`data-kpu-tier`
+  (dieselbe Kennzeichnung wie GUIDELINES 8.1). Für Bedeutung, die eskaliert – eine Fehlerklasse, eine Zuschlagsstufe –
+  statt für "die eine wichtige Zahl", wofür weiterhin `highlight` steht. Beide schließen sich an derselben Kachel aus.
+- GUIDELINES 8.1, CHECKLIST: `tier` dokumentiert, mit Beispiel und der Abgrenzung zu `highlight`.
+
+### Migration 0.4 → 0.5
+- `bin/sync.sh <bundle>`, dann `--check`.
+- Kein Plugin muss `tier` benutzen. Wo eine Kachel oder ein `details`-Eintrag eine echte, eskalierende Bedeutung hat
+  (nicht nur Position), eine Zeile ergänzen: `{..., tier: 2}`.
+
 ## [0.4.0] – 2026-09-26
 
 Kennzeichnungen für Themes. Abwärtskompatibel: ohne Theme sieht alles aus wie in 0.3.

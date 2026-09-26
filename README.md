@@ -33,7 +33,7 @@ bin/sync.sh /pfad/zu/kimai-abrechnung-bundle
 Das kopiert nach `Resources/views/_kit/` (Makros, Assets, `VERSION`) und `Resources/translations/kpu.de.xlf`,
 `kpu.en.xlf`. Plugin-eigene Dateien werden nicht angefasst, ein zweiter Lauf ändert nichts.
 Danach im Kimai-Container `bin/console kimai:reload` und die kopierten Dateien im Plugin committen
-(„Update UI kit to 0.4.0“). Mit `bin/sync.sh <bundle> --check` prüfen, ob ein Plugin auf Stand ist (Exit 1, wenn nicht).
+(„Update UI kit to 0.5.0“). Mit `bin/sync.sh <bundle> --check` prüfen, ob ein Plugin auf Stand ist (Exit 1, wenn nicht).
 
 Im Template (Namespace = Bundle-Name ohne „Bundle“):
 

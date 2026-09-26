@@ -456,6 +456,11 @@ Grundform aus dem Kit.
   Welche Variablen es gibt, steht beim Theme (Knust: `PLUGINS.md`).
 - Ein Plugin DARF NICHT abfragen, ob ein bestimmtes Theme installiert ist, um sein CSS zu ändern. Ausnahme nur für
   Ausgaben, die CSS nicht erreicht und die in Kimai bleiben; Exporte (PDF, Mail, ICS, CSV) bleiben immer neutral.
+- `kit.kpi_bar()` setzt `tier` (seit 0.5) selbst als `kpu-tier`/`data-kpu-tier`, auf der Kachel wie im
+  `details`-Eintrag: `{label: 'mileage.import.kpi.errors'|trans, value: bad|amount, tier: 3}`. `tier` ist für
+  eskalierende Bedeutung (0 neutral, 1–3 steigend, wie Zuschlagsstufen oder Fehlerklassen) und schließt sich mit
+  `highlight` an derselben Kachel aus: `highlight` markiert die eine wichtige Zahl (immer die Akzentfarbe), `tier`
+  eine, die eskaliert. Nicht jede Kachel braucht eines von beiden.
 
 ## 9. Menüs und Icons
 
