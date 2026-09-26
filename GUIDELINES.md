@@ -338,6 +338,8 @@ Kimai-Filter kennen Sprache, Zeitzone und Währung des Benutzers. Hartkodierte F
   `|format_date(pattern: <Muster aus Übersetzung>, locale: app.user.locale, timezone: false)` – das Muster selbst MUSS
   aus einem Übersetzungskey kommen (de „EEEE, d. MMMM“, en „EEEE, MMMM d“). Ohne `locale:` formatiert `format_date` englisch.
 - In PHP (PDF, Mails): `App\Utils\LocaleFormatter` bzw. `IntlDateFormatter`/`NumberFormatter` mit Benutzer-Locale.
+- Formatierte Werte in Tabellen und Summen tragen die Klasse `kpu-num` (seit 0.4), siehe 8.1. Kimai-Spalten
+  `col_date`, `col_duration` usw. brauchen sie nicht zusätzlich, eigene Spalten (`col_distance`, Wochenraster) schon.
 
 ---
 
@@ -436,6 +438,25 @@ Zeitraum anpassen.“ Keine Ausnahmetexte, keine Entschuldigungen, keine Ausrufe
   oder über `ThemeEvent::STYLESHEET`.
 - Jeder UI-PR enthält Screenshots hell und dunkel (Kimai setzt `data-bs-theme="dark"` nach Benutzer/System).
 
+### 8.1 Themes (seit 0.4)
+
+Ein Kimai-Theme (z. B. Knust) soll Plugins mitgestalten können, ohne dass ein Plugin das Theme kennen muss. Dafür
+kennzeichnet das Plugin, **was** ein Element ist; wie es aussieht, entscheidet das Theme. Ohne Theme gilt die neutrale
+Grundform aus dem Kit.
+
+| Kennzeichnung | Bedeutung | Kit-Grundform |
+|---|---|---|
+| `kpu-num` | Zahl, Zeit, Datum, Betrag, Dauer (Zelle oder Inline-Element) | Ziffern gleich breit, kein Umbruch |
+| `kpu-tier` + `data-kpu-tier="0–3"` | Stufe: `0` Grundstufe, `1`–`3` steigend (Zuschläge, Prioritäten) | keine; Farbe setzt das Plugin weiter selbst |
+| `kpu-mark` | Farbpunkt einer Entität (Kunde, Projekt, Tätigkeit) | `inline-block`, schrumpft nicht |
+
+- Kennzeichnungen ersetzen keine Tabler-Klassen: Eine Stufe bleibt z. B. `bg-yellow text-yellow-fg kpu-tier`,
+  damit sie ohne Theme genauso aussieht wie vorher.
+- Eigenes Plugin-CSS DARF Theme-Variablen nur mit Rückfallwert nutzen: `border-radius: var(--knust-mark-radius, 50%)`.
+  Welche Variablen es gibt, steht beim Theme (Knust: `PLUGINS.md`).
+- Ein Plugin DARF NICHT abfragen, ob ein bestimmtes Theme installiert ist, um sein CSS zu ändern. Ausnahme nur für
+  Ausgaben, die CSS nicht erreicht und die in Kimai bleiben; Exporte (PDF, Mail, ICS, CSV) bleiben immer neutral.
+
 ## 9. Menüs und Icons
 
 - Menüeinträge über `App\Event\ConfigureMainMenuEvent`, eingehängt in den passenden Core-Bereich
@@ -483,3 +504,4 @@ Zeitraum anpassen.“ Keine Ausnahmetexte, keine Entschuldigungen, keine Ausrufe
 | Rückgängig | – | `KimaiPluginUi.undoToast`, Rückgängig-Fenster (3.5) |
 | Formular | FormTypes, `default/_form.html.twig`, `modal-ajax-form` | – |
 | Tagesraster | – | bewusst nicht im Kit (Drehzettel-spezifisch) |
+| Zahl, Stufe, Farbpunkt für Themes | Kimai-Spaltenklassen `col_*` | `kpu-num`, `kpu-tier`/`data-kpu-tier`, `kpu-mark` (8.1) |

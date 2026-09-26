@@ -52,6 +52,7 @@ Nicht zutreffende Punkte mit „n/a“ markieren.
 ## Darstellung
 - [ ] 390 px: `document.documentElement.scrollWidth === 390`, Screenshot im PR (7)
 - [ ] Dunkelmodus-Screenshot im PR; keine Hex-/rgb-/Namensfarben, kein Inline-`<style>` im Inhalt (8)
+- [ ] Zahlen/Zeiten/Beträge in eigenen Spalten mit `kpu-num`, Stufen mit `kpu-tier` + `data-kpu-tier`, Farbpunkte mit `kpu-mark`; Theme-Variablen nur mit Rückfallwert; keine Abfrage, ob ein Theme installiert ist (8.1)
 - [ ] Menüeintrag im passenden Core-Bereich, Icon als Kimai-Alias wo möglich (9)
 - [ ] Kein Inline-JS-Handler; JS startet auf `kimai.initialized`; POSTs mit CSRF (10)
 - [ ] Daten-Texte für Kimais `alert`-Plugin mit `KimaiPluginUi.escapeHtml()` maskiert; kein `innerHTML` mit Daten (10)

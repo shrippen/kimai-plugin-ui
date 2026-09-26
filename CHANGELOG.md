@@ -2,6 +2,22 @@
 
 Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionen nach [SemVer](https://semver.org/lang/de/).
 
+## [0.4.0] – 2026-09-26
+
+Kennzeichnungen für Themes. Abwärtskompatibel: ohne Theme sieht alles aus wie in 0.3.
+
+### Neu
+- `kpu-num` (Zahl, Zeit, Datum, Betrag), `kpu-tier` + `data-kpu-tier="0–3"` (Stufe), `kpu-mark` (Farbpunkt einer
+  Entität). Das Kit gibt nur eine neutrale Grundform, ein Theme wie Knust gestaltet sie (GUIDELINES 8.1).
+- Makros setzen `kpu-num` selbst: Zeitraum-Label in `period_nav`, Werte in `kpi_bar` `details`, Summen in `group_header`.
+- GUIDELINES 8.1 „Themes“: Kennzeichnen statt Theme abfragen, Theme-Variablen nur mit Rückfallwert, Exporte neutral.
+  CHECKLIST-Punkt dazu.
+
+### Migration 0.3 → 0.4
+- `bin/sync.sh <bundle>`, dann `--check`.
+- Eigene Tabellenzellen mit formatierten Werten (`|duration`, `|money`, `|amount`, `|date_short`, `|time`) um `kpu-num`
+  ergänzen; Stufen-Elemente um `kpu-tier` + `data-kpu-tier`; eigene Farbpunkte um `kpu-mark`.
+
 ## [0.3.0] – 2026-09-25
 
 Lücken aus den Integrationen Holiday, Abrechnung, Drehzettel und Anfahrten (MileageBundle). Abwärtskompatibel bis auf
