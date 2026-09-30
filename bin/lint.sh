@@ -42,8 +42,8 @@ done
 # dynamische Keys (kpu.status.<x>, kpu.period.<x>, …)
 for k in open requested approved rejected billed locked warning; do grep -q "resname=\"kpu.status.$k\"" kit/translations/kpu.de.xlf || { echo "FEHLER kpu.status.$k" >&2; fail=1; }; done
 for k in day week month year; do grep -q "resname=\"kpu.period.$k\"" kit/translations/kpu.de.xlf || { echo "FEHLER kpu.period.$k" >&2; fail=1; }; done
-# seit 0.6: kpu.delta.<richtung>, kpu.mark.<herkunft>, kpu.hint.<art>
-for k in delta.up delta.down delta.flat mark.own mark.inherited mark.generated hint.info hint.warning hint.danger hint.success; do
+# seit 0.6: kpu.delta.<richtung>, kpu.mark.<herkunft>, kpu.hint.<art>; seit 0.7: kpu.day.<art>
+for k in day.today day.holiday day.absence delta.up delta.down delta.flat mark.own mark.inherited mark.generated hint.info hint.warning hint.danger hint.success; do
     grep -q "resname=\"kpu.$k\"" kit/translations/kpu.de.xlf || { echo "FEHLER kpu.$k" >&2; fail=1; }
 done
 [ "$fail" -eq 0 ] && echo "ok   alle benutzten kpu.-Keys vorhanden"

@@ -21,7 +21,7 @@
         'warning': 'bg-orange-lt',
         'approved': 'bg-success-lt',
         'rejected': 'bg-danger-lt',
-        'billed': 'bg-blue-lt',
+        'billed': 'bg-lime-lt',
         'locked': 'bg-purple-lt',
     }[status] ?? 'bg-secondary-lt' -}}
 {%- endmacro %}
@@ -29,13 +29,15 @@
 {#
     status_badge(status, tooltip = null)
     status: open | requested | approved | rejected | billed | locked | warning
+    data-kpu-status (seit 0.7) trägt den Schlüssel auch als Attribut, damit ein Theme jeden Stand eigen gestalten kann
+    (billed = erledigt und abgeschlossen: grün mit gefülltem Haken, nie wie eine Auswahl).
     warning (seit 0.2) ist orange und trägt immer das Kimai-Icon "warning" (Ausrufezeichen) – so bleibt es auch
     ohne Farbe von requested (gelb, ohne Icon) unterscheidbar. tooltip nennt bei warning den Grund.
     Beispiel: {{ kit.status_badge('approved') }}
               {{ kit.status_badge('warning', 'drehzettel.warning.rest_time'|trans) }}
 #}
 {% macro status_badge(status, tooltip) -%}
-    <span class="badge {{ _self.status_class(status) }} kpu-status kpu-status-{{ status|e('html_attr') }}"
+    <span class="badge {{ _self.status_class(status) }} kpu-status kpu-status-{{ status|e('html_attr') }}" data-kpu-status="{{ status|e('html_attr') }}"
         {%- if tooltip %} data-toggle="tooltip" title="{{ tooltip }}"{% endif %}>
         {%- if status == 'warning' %}{{ icon('warning') }}{% endif -%}
         {{- ('kpu.status.' ~ status)|trans({}, 'kpu') -}}
@@ -322,17 +324,21 @@
 {%- endmacro %}
 
 {#
-    delta(text, direction)
+    delta(text, direction, good = 'up')
     Veränderung gegenüber dem Vorzeitraum (seit 0.6): Richtung als Form und Farbe, dazu der Text.
       text     : bereits formatiert, mit Vorzeichen, z. B. '+12 %', '−3:30'
-      direction: up (steigt, grün, ▲) | down (sinkt, rot, ▼) | flat (gleich, grau, –)
-    Farben wie in Kante: up = gut, down = schlecht. Wo Steigen schlecht ist (Kosten, Fehler), kein delta, sondern
-    tier oder status_badge('warning', …).
+      direction: up (steigt, ▲) | down (sinkt, ▼) | flat (gleich, –, grau)
+      good     : (seit 0.7) welche Richtung gut ist, wie Kantes .delta[data-good]:
+                 up (Standard: Umsatz, Stunden – steigt grün, sinkt rot)
+                 | down (Kosten, Fehler, offene Posten – steigt rot, sinkt grün)
+                 | none (keine Wertung – nur der Pfeil, ohne Farbe)
     Beispiel: {{ kit.kpi_bar([{label: '…', value: sum|duration, hint: kit.delta('+12 %', 'up')}]) }}
+              {{ kit.delta('+8 %', 'up', 'down') }}   (Kosten gestiegen: rot)
 #}
-{% macro delta(text, direction) -%}
+{% macro delta(text, direction, good) -%}
     {%- set direction = direction in ['up', 'down', 'flat'] ? direction : 'flat' -%}
-    <span class="kpu-delta kpu-num" data-kpu-delta="{{ direction }}"><span class="visually-hidden">{{ ('kpu.delta.' ~ direction)|trans({}, 'kpu') }}: </span>{{ text }}</span>
+    {%- set good = good in ['down', 'none'] ? good : 'up' -%}
+    <span class="kpu-delta kpu-num" data-kpu-delta="{{ direction }}"{% if good != 'up' %} data-kpu-good="{{ good }}"{% endif %}><span class="visually-hidden">{{ ('kpu.delta.' ~ direction)|trans({}, 'kpu') }}: </span>{{ text }}</span>
 {%- endmacro %}
 
 {#
@@ -466,6 +472,75 @@
             <div class="kpu-hint-card-actions">{{ options.actions }}</div>
         {%- endif %}
     </article>
+{%- endmacro %}
+
+{#
+    calendar_day(number, options = {})
+    Tag in einem Monats- oder Wochenraster (seit 0.7), wie Kantes .cal: heute gelber Rahmen, Feiertag oranger
+    Balken unten, Abwesenheit cyan Balken, beides geteilt, Wochenende abgesenkt, ausgewählt cyan getönt mit Rahmen,
+    Entität (ein Tag, der einem Plugin-Objekt gehört, z. B. ein Drehtag) lila getönt.
+    Der Balken färbt nie die ganze Zelle, damit eine Abwesenheit nicht wie eine Auswahl aussieht.
+      number : Tageszahl (oder kurzer Text)
+      options: { today: bool, holiday: bool, absence: bool, weekend: bool, selected: bool, entity: bool,
+                 label: '…' (Name des Feiertags / der Abwesenheit, Tooltip und Screenreader),
+                 url: '…' (Zelle wird Link), tag: 'div' | 'td' (Standard div), content: HTML unter der Zahl }
+    Raster: <div class="kpu-days">…</div> (7 Spalten) oder eine <table> mit tag: 'td'.
+    Beispiel: {{ kit.calendar_day(day|date('j'), {today: day == today, holiday: hol[day] is defined, label: hol[day] ?? null,
+                  absence: day in absent, weekend: day|date('N') >= 6}) }}
+#}
+{% macro calendar_day(number, options) -%}
+    {%- set options = options ?? {} -%}
+    {%- set kinds = [] -%}
+    {%- for kind in ['holiday', 'absence', 'weekend', 'entity'] -%}
+        {%- if options[kind] ?? false %}{% set kinds = kinds|merge([kind]) %}{% endif -%}
+    {%- endfor -%}
+    {%- set tag = (options.tag ?? 'div') == 'td' ? 'td' : 'div' -%}
+    {%- set said = [] -%}
+    {%- for kind in ['today', 'holiday', 'absence'] -%}
+        {%- if options[kind] ?? false %}{% set said = said|merge([('kpu.day.' ~ kind)|trans({}, 'kpu')]) %}{% endif -%}
+    {%- endfor -%}
+    {%- if options.label ?? false %}{% set said = said|merge([options.label]) %}{% endif -%}
+    <{{ tag }} class="kpu-day"{% if kinds is not empty %} data-kpu-day="{{ kinds|join(' ') }}"{% endif %}
+        {%- if options.today ?? false %} aria-current="date"{% endif %}
+        {%- if options.selected ?? false %} aria-selected="true"{% endif %}
+        {%- if options.label ?? false %} title="{{ options.label }}"{% endif %}>
+        {%- if options.url ?? false %}<a class="kpu-day-link" href="{{ options.url }}">{% endif -%}
+        <span class="kpu-day-num kpu-num">{{ number }}</span>
+        {%- if said is not empty %}<span class="visually-hidden"> {{ said|join(', ') }}</span>{% endif -%}
+        {%- if options.content ?? false %}<span class="kpu-day-content">{{ options.content }}</span>{% endif -%}
+        {%- if options.url ?? false %}</a>{% endif -%}
+    </{{ tag }}>
+{%- endmacro %}
+
+{#
+    field_group(label, body, options = {})
+    Feldgruppe (seit 0.7): Formularzeilen, die zu einem Plugin-Objekt gehören (z. B. die Drehzettel-Felder im
+    Kimai-Zeiteintrag). Lila wie Kantes Rolle für Tags und Entitäten: Balken links, leichte Tönung, Beschriftung oben.
+      body   : gerenderte Felder, z. B. über {% set body %}{{ form_row(form.drehzettel) }}{% endset %}
+      options: { id: '…' }
+    Ohne Makro geht auch nur die Kennzeichnung: <div class="kpu-field-group">…</div> (Beschriftung optional als
+    <div class="kpu-field-group-label">…</div>).
+    Beispiel: {{ kit.field_group('drehzettel.fields'|trans, body) }}
+#}
+{% macro field_group(label, body, options) -%}
+    {%- set options = options ?? {} -%}
+    <fieldset class="kpu-field-group"{% if options.id ?? false %} id="{{ options.id }}"{% endif %}>
+        {%- if label %}<legend class="kpu-field-group-label">{{ label }}</legend>{% endif -%}
+        {{ body }}
+    </fieldset>
+{%- endmacro %}
+
+{#
+    map_pin(label, color = null)
+    Kartenmarker (seit 0.7), eckig wie Kantes .map-pin: Quadrat in der Markerfarbe mit Rand im Seitengrund.
+    Farbe: color (z. B. Projektfarbe) oder Theme-Rolle --knust-map-marker (Knust: cyan), sonst Tabler-Primärfarbe.
+    Für Leaflet dieselbe Kennzeichnung als divIcon, die Route in --knust-map-route (Knust: gelb):
+        L.marker(latlng, {icon: L.divIcon({className: 'kpu-map-pin', iconSize: [14, 14]})})
+        const route = getComputedStyle(map.getContainer()).getPropertyValue('--knust-map-route').trim() || fallback;
+    Beispiel: {{ kit.map_pin(trip.destination) }}
+#}
+{% macro map_pin(label, color) -%}
+    <span class="kpu-map-pin" role="img" aria-label="{{ label }}" title="{{ label }}"{% if color %} style="--kpu-pin-color: {{ color }}"{% endif %}></span>
 {%- endmacro %}
 
 {#

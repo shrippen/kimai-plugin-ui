@@ -151,6 +151,18 @@
         <source>kpu.hint.why</source>
         <target>Why?</target>
       </trans-unit>
+      <trans-unit id="kpu037" resname="kpu.day.today">
+        <source>kpu.day.today</source>
+        <target>today</target>
+      </trans-unit>
+      <trans-unit id="kpu038" resname="kpu.day.holiday">
+        <source>kpu.day.holiday</source>
+        <target>public holiday</target>
+      </trans-unit>
+      <trans-unit id="kpu039" resname="kpu.day.absence">
+        <source>kpu.day.absence</source>
+        <target>absent</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>
