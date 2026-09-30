@@ -164,7 +164,7 @@ bleibt Kimais `widgets.label_boolean()`.
 | `requested` | Beantragt | Requested | `bg-warning-lt` (gelb) | HB: Abwesenheit wartet auf Genehmigung |
 | `approved` | Genehmigt | Approved | `bg-success-lt` (grün) | HB: Abwesenheit genehmigt |
 | `rejected` | Abgelehnt | Rejected | `bg-danger-lt` (rot) | HB: Abwesenheit abgelehnt |
-| `billed` | Abgerechnet | Billed | `bg-blue-lt` (blau) | AB: exportiert (Kimai `exported`) · HB: in Abrechnung übernommen |
+| `billed` | Abgerechnet | Billed | `bg-lime-lt` (grün, seit 0.7) | AB: exportiert (Kimai `exported`) · HB: in Abrechnung übernommen |
 | `locked` | Gesperrt | Locked | `bg-purple-lt` (violett) | HB: Monat gesperrt · Kimai-Lockdown |
 | `warning` | Warnung | Warning | `bg-orange-lt` (orange) + Icon `warning` (!) | DZ: Verstoß gegen Regeln (Ruhezeit, Höchstarbeitszeit) – Grund im `tooltip` |
 
@@ -173,7 +173,9 @@ bleibt Kimais `widgets.label_boolean()`.
   „Warnung“ ist kein Bearbeitungsstand, sondern ein Hinweis: Er DARF neben einem Status-Badge stehen
   (`{{ kit.status_badge('open') }} {{ kit.status_badge('warning', 'drehzettel.warning.rest_time'|trans) }}`).
   Der Grund MUSS im `tooltip` (oder daneben als Text) stehen.
-- `billed` nutzt bewusst `bg-blue-lt` statt `bg-primary-lt`: die Primärfarbe ist in Tabler umstellbar, der Status soll blau bleiben.
+- `billed` ist seit 0.7 grün (`bg-lime-lt`, vorher `bg-blue-lt`): erledigt und abgeschlossen. Blau lag in Knust hell fast
+  auf dem Cyan der Auswahl; eine abgerechnete Zeile sah aus wie eine ausgewählte. Grün bleibt von `approved` (Aqua mit
+  Haken) getrennt; Knust zeichnet `billed` als gefülltes Quadrat mit Haken. Jedes Badge trägt `data-kpu-status="<key>"`.
 - Neue Status MÜSSEN erst hier und im Kit ergänzt werden. Durchstreichen, Klartext oder eigene Chips als Status DÜRFEN NICHT sein.
 - Status DARF NICHT allein über Farbe vermittelt werden (Text im Badge ist Pflicht).
 
@@ -451,18 +453,28 @@ Grundform aus dem Kit.
 | `kpu-mark` | Farbpunkt einer Entität (Kunde, Projekt, Tätigkeit) | `inline-block`, schrumpft nicht |
 | `kpu-mark` + `data-kpu-src="own\|inherited\|generated"` (seit 0.6, `kit.mark`) | Herkunft der Farbe: eigene, geerbte, von Kimai erzeugte | Ring durchgezogen, gestrichelt, gepunktet |
 | `kpu-delta` + `data-kpu-delta="up\|down\|flat"` (seit 0.6, `kit.delta`) | Veränderung zum Vorzeitraum | ▲ grün, ▼ rot, – grau; Text daneben |
+| `kpu-delta` + `data-kpu-good="down\|none"` (seit 0.7, `kit.delta(text, direction, good)`) | welche Richtung gut ist: `down` für Kosten, Fehler; `none` ohne Wertung | `down`: ▲ rot, ▼ grün; `none`: Pfeil in Textfarbe |
 | `kpu-setting` (seit 0.6, `kit.setting`) | Einstellungszeile: Name, Erklärung, Steuerung, „Zurücksetzen“ | Raster, unter 576 px einspaltig |
 | `kpu-chip-pick` (seit 0.6, `kit.chip_pick`) | Checkbox als Chip (Mehrfachfilter) | Quadrat leer = aus, gefüllt = an |
 | `kpu-fold` (seit 0.6, `kit.fold`) | aufklappbarer Abschnitt mit Anzahl (`<details>`) | Dreieck dreht beim Öffnen |
 | `kpu-modebar` (seit 0.6, `kit.modebar`) | Auswahl einer Art/eines Modus mit Anzahl, als Links | Leiste, scrollt seitlich |
 | `kpu-hint-card` + `data-kpu-hint="info\|warning\|danger\|success"` (seit 0.6, `kit.hint_card`) | Befund mit Art, Quelle, „Warum?“, Aktionen | Balken oben; Art als Form + Text + Farbe |
+| `kpu-day` + `data-kpu-day="holiday absence weekend entity"`, `aria-current="date"`, `aria-selected` (seit 0.7, `kit.calendar_day`) | Tag im Monats-/Wochenraster (`kpu-days`); `entity` = der Tag gehört einem Plugin-Objekt (Drehtag) | heute gelber Rahmen, Feiertag oranger, Abwesenheit cyan Balken, Wochenende abgesenkt, ausgewählt getönt mit Rahmen, Entität lila getönt |
+| `kpu-field-group` (+ `kpu-field-group-label`) (seit 0.7, `kit.field_group`) | Formularzeilen eines Plugin-Objekts (z. B. Drehzettel-Felder im Zeiteintrag) | lila Balken links, leichte lila Tönung |
+| `kpu-map-pin` (seit 0.7, `kit.map_pin`, Leaflet `divIcon({className: 'kpu-map-pin'})`) | Marker auf einer Karte | Quadrat in `--knust-map-marker`, Rand im Seitengrund |
+| `kpu-status` + `data-kpu-status="<key>"` (seit 0.7) | Bearbeitungsstand (3.3) | Tabler-Soft-Badge |
 
 - Fehlt eine Kennzeichnung, kommt sie erst ins Kit, dann ihre Gestaltung nach Knust, dann ins Plugin (`agent.md`).
 - Kennzeichnungen ersetzen keine Tabler-Klassen: Eine Stufe bleibt z. B. `bg-yellow text-yellow-fg kpu-tier`,
   damit sie ohne Theme genauso aussieht wie vorher.
 - Die Kennzeichnungen seit 0.6 entsprechen Kantes `.swatch[data-src]`, `.delta`, `.setting`, `.chip-pick`, `.fold`,
   `.modebar` und `.hint-card` (Kante 1.7). Plugins erzeugen sie nur über die Makros, nicht per Hand; Knust gestaltet sie.
-  `delta` folgt Kante: Steigen ist gut. Wo Steigen schlecht ist (Kosten, Fehler), `tier` oder `status_badge('warning', …)`.
+  `delta` folgt Kante: Steigen ist gut. Wo Steigen schlecht ist (Kosten, Fehler, offene Posten), `good: 'down'`
+  (seit 0.7, Kantes `.delta[data-good="down"]`); wo eine Richtung weder gut noch schlecht ist, `good: 'none'`.
+  `calendar_day` färbt Feiertag und Abwesenheit als Balken, nie die ganze Zelle: eine Fläche in Cyan hieße „ausgewählt“.
+  Was einem Plugin-Objekt gehört (Drehtag, Drehzettel-Felder), ist lila (Kantes Farbe für Tags und Entitäten):
+  `entity` am Kalendertag, `field_group` im Formular; nicht Gelb, das ist Kantes Farbe für „läuft“ und Wertung.
+  Kartenrouten nehmen `--knust-map-route` (Knust gelb), Marker `kpu-map-pin` bzw. `--knust-map-marker` (cyan).
   `modebar` ist für Arten/Modi, `period_nav` bleibt für Zeiträume; `hint_card` für Befunde, `result_callout` für
   Rückmeldungen nach einer Aktion.
 - Eigenes Plugin-CSS DARF Theme-Variablen nur mit Rückfallwert nutzen: `border-radius: var(--knust-mark-radius, 50%)`.
@@ -525,7 +537,8 @@ Grundform aus dem Kit.
 | Formular | FormTypes, `default/_form.html.twig`, `modal-ajax-form` | – |
 | Tagesraster | – | bewusst nicht im Kit (Drehzettel-spezifisch) |
 | Zahl, Stufe, Farbpunkt für Themes | Kimai-Spaltenklassen `col_*` | `kpu-num`, `kpu-tier`/`data-kpu-tier`, `kpu-mark` (8.1) |
-| Farbpunkt mit Herkunft, Veränderung | `widgets.label_dot` | `mark(color, label, src)`, `delta(text, direction)` (8.1) |
+| Farbpunkt mit Herkunft, Veränderung | `widgets.label_dot` | `mark(color, label, src)`, `delta(text, direction, good)` (8.1) |
+| Kalendertag, Kartenmarker, Feldgruppe | – | `calendar_day(number, options)`, `map_pin(label, color)`, `field_group(label, body)` (8.1) |
 | Einstellungszeile, aufklappbarer Abschnitt | FormTypes | `setting(label, control, options)`, `fold(title, body, options)` (8.1) |
 | Mehrfachfilter, Art/Modus mit Anzahl | Toolbar-Formular | `chip_pick(name, value, label, options)`, `modebar(items, label)` (8.1) |
 | Hinweis/Befund | `alert` | `hint_card(title, options)` (8.1) |

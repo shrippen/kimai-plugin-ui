@@ -13,7 +13,8 @@ Gemeinsamer UI-Leitfaden und kleines UI-Kit für die Kimai-2.67-Plugins **Drehze
 ```
 kit/templates/_kit/macros.html.twig   Makros: period_nav, kpi_bar, status_badge, group_header, empty_state,
                                       result_callout(s), context_line, bulk_bar, bulk_checkbox, bulk_select_all,
-                                      bulk_select_group, mark, delta, setting, chip_pick, fold, modebar, hint_card
+                                      bulk_select_group, mark, delta, setting, chip_pick, fold, modebar, hint_card,
+                                      calendar_day, map_pin
 kit/templates/_kit/assets.html.twig   CSS + JS inline (generiert aus kit/css und kit/js)
 kit/css/kit.css                       Klassen .kpu-*, nur var(--tblr-…)
 kit/js/kit.js                         window.KimaiPluginUi: Sammelauswahl (auch je Gruppe), Sofort-Aktionen
@@ -144,13 +145,20 @@ für die Knust noch keine Kennzeichnung hatte:
 
 ```twig
 {{ kit.delta('+12 %', 'up') }}
+{{ kit.delta('+8 %', 'up', 'down') }}   {# 0.7: Kosten gestiegen = rot; 'none' = nur Pfeil #}
 {{ kit.mark(project.color|colorize(project.name), project.name, 'inherited') }}
 {{ kit.setting('mileage.settings.rate'|trans, form_widget(form.rate), {for: form.rate.vars.id, hint: '…', modified: true, reset: {url: '#'}}) }}
 {{ kit.chip_pick('status[]', 'open', 'kpu.status.open'|trans({}, 'kpu'), {checked: true, count: 12|amount}) }}
 {{ kit.fold('holiday.fold.past'|trans, body, {count: past|length}) }}
 {{ kit.modebar([{label: '…', url: '…', count: 42|amount, active: true}, …], 'mileage.trips.kind'|trans) }}
 <div class="kpu-hint-cards">{{ kit.hint_card('…', {type: 'warning', source: 'ACME', why: '…', url: '#'}) }}</div>
+<div class="kpu-days">{{ kit.calendar_day(3, {holiday: true, label: 'Tag der Deutschen Einheit', weekend: true}) }}…</div>
+{% set fields %}{{ form_row(form.drehzettel) }}{% endset %}{{ kit.field_group('Drehzettel', fields) }}
+{{ kit.map_pin('Studio Adlershof') }}   {# Leaflet: L.divIcon({className: 'kpu-map-pin', iconSize: [14, 14]}) #}
 ```
+
+0.7 ergänzt Polarität an `delta`, den Kalendertag (`calendar_day`, wie Kantes `.cal`), den eckigen Kartenmarker
+(`map_pin`, wie `.map-pin`), Plugin-Objekte in Lila (`field_group`, `calendar_day` mit `entity`) und einen eigenen Stand für „Abgerechnet“ (grün, `data-kpu-status`).
 
 Regeln für Plugins und fehlende Bausteine: [agent.md](agent.md).
 

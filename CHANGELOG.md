@@ -2,6 +2,31 @@
 
 Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionen nach [SemVer](https://semver.org/lang/de/).
 
+## [0.7.0] – 2026-09-30
+
+Abgleich mit Knust 1.4 / Kante 1.9. Abwärtskompatibel bis auf die Farbe von `billed`.
+
+### Neu
+- `delta(text, direction, good)`: `good` `down` (Kosten, Fehler: steigt rot, sinkt grün) oder `none` (nur Pfeil),
+  als `data-kpu-good`; Standard bleibt `up`. Wie Kantes `.delta[data-good]`.
+- `calendar_day(number, options)` (`kpu-day`, Raster `kpu-days`): heute gelber Rahmen (`aria-current="date"`),
+  Feiertag oranger und Abwesenheit cyan Balken (`data-kpu-day`), Wochenende abgesenkt, ausgewählt getönt
+  (`aria-selected`). Wie Kantes `.cal`. Keys `kpu.day.*`.
+- `calendar_day` mit `entity: true` (`data-kpu-day~="entity"`): Tag eines Plugin-Objekts (Drehtag), lila getönt.
+- `field_group(label, body)` (`kpu-field-group`, `kpu-field-group-label`): Formularzeilen eines Plugin-Objekts, lila
+  Balken und Tönung (Kantes Farbe für Tags und Entitäten).
+- `map_pin(label, color)` (`kpu-map-pin`): eckiger Kartenmarker wie Kantes `.map-pin`, auch als Leaflet-`divIcon`.
+- `status_badge` setzt `data-kpu-status="<key>"`.
+
+### Geändert
+- `billed` ist grün (`bg-lime-lt`) statt blau: in Knust hell lag Blau fast auf dem Cyan der Auswahl.
+
+### Behoben
+- Hinweiskarte „Warnung“ ohne Knust: Beschriftung in `--tblr-warning-text-emphasis` statt Tablers Gelb auf Weiß.
+
+### Migration 0.6 → 0.7
+- `bin/sync.sh <bundle>`, dann `--check`. Wer `delta` für Kosten oder Fehler nutzt, `good: 'down'` ergänzen.
+
 ## [0.6.0] – 2026-09-30
 
 Abgleich mit Knust 1.3 / Kante 1.7. Abwärtskompatibel: bestehende Makros rendern wie in 0.5.
@@ -25,8 +50,7 @@ Abgleich mit Knust 1.3 / Kante 1.7. Abwärtskompatibel: bestehende Makros render
 ### Migration 0.5 → 0.6
 - `bin/sync.sh <bundle>`, dann `--check`.
 - Eigene Nachbauten dieser Bausteine (Filter-Chips, Pfeil für Veränderung, aufklappbare Abschnitte, Einstellungszeilen,
-  Hinweiskarten, Modusleisten) durch die Makros ersetzen. Knust gestaltet die neuen Kennzeichnungen erst in einer
-  folgenden Version; bis dahin gilt die Grundform aus dem Kit.
+  Hinweiskarten, Modusleisten) durch die Makros ersetzen. Knust gestaltet die neuen Kennzeichnungen ab 1.4.
 
 ## [0.5.0] – 2026-09-26
 
