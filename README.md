@@ -13,7 +13,7 @@ Gemeinsamer UI-Leitfaden und kleines UI-Kit für die Kimai-2.67-Plugins **Drehze
 ```
 kit/templates/_kit/macros.html.twig   Makros: period_nav, kpi_bar, status_badge, group_header, empty_state,
                                       result_callout(s), context_line, bulk_bar, bulk_checkbox, bulk_select_all,
-                                      bulk_select_group
+                                      bulk_select_group, mark, delta, setting, chip_pick, fold, modebar, hint_card
 kit/templates/_kit/assets.html.twig   CSS + JS inline (generiert aus kit/css und kit/js)
 kit/css/kit.css                       Klassen .kpu-*, nur var(--tblr-…)
 kit/js/kit.js                         window.KimaiPluginUi: Sammelauswahl (auch je Gruppe), Sofort-Aktionen
@@ -33,7 +33,7 @@ bin/sync.sh /pfad/zu/kimai-abrechnung-bundle
 Das kopiert nach `Resources/views/_kit/` (Makros, Assets, `VERSION`) und `Resources/translations/kpu.de.xlf`,
 `kpu.en.xlf`. Plugin-eigene Dateien werden nicht angefasst, ein zweiter Lauf ändert nichts.
 Danach im Kimai-Container `bin/console kimai:reload` und die kopierten Dateien im Plugin committen
-(„Update UI kit to 0.5.0“). Mit `bin/sync.sh <bundle> --check` prüfen, ob ein Plugin auf Stand ist (Exit 1, wenn nicht).
+(„Update UI kit to 0.6.0“). Mit `bin/sync.sh <bundle> --check` prüfen, ob ein Plugin auf Stand ist (Exit 1, wenn nicht).
 
 Im Template (Namespace = Bundle-Name ohne „Bundle“):
 
@@ -135,6 +135,24 @@ document.addEventListener('kpu:selection-change', function (event) {
 {{ kit.kpi_bar([{label: 'drehzettel.kpi.surcharges'|trans, value: total|money(currency),
     details: tiers|map(t => {label: t.label, value: t.amount|money(currency)})}]) }}
 ```
+
+## Knust und Kante (seit 0.6)
+
+Kimai-Plugins nehmen ihre Oberfläche aus Knust (`shrippen/kimai-knust-bundle`), dem Kimai-Ableger von Kante. Das Kit
+sagt, *was* ein Element ist (`kpu-*`), Knust gestaltet es (Knust `PLUGINS.md`). 0.6 ergänzt die Kante-1.7-Bausteine,
+für die Knust noch keine Kennzeichnung hatte:
+
+```twig
+{{ kit.delta('+12 %', 'up') }}
+{{ kit.mark(project.color|colorize(project.name), project.name, 'inherited') }}
+{{ kit.setting('mileage.settings.rate'|trans, form_widget(form.rate), {for: form.rate.vars.id, hint: '…', modified: true, reset: {url: '#'}}) }}
+{{ kit.chip_pick('status[]', 'open', 'kpu.status.open'|trans({}, 'kpu'), {checked: true, count: 12|amount}) }}
+{{ kit.fold('holiday.fold.past'|trans, body, {count: past|length}) }}
+{{ kit.modebar([{label: '…', url: '…', count: 42|amount, active: true}, …], 'mileage.trips.kind'|trans) }}
+<div class="kpu-hint-cards">{{ kit.hint_card('…', {type: 'warning', source: 'ACME', why: '…', url: '#'}) }}</div>
+```
+
+Regeln für Plugins und fehlende Bausteine: [agent.md](agent.md).
 
 ## Aktualisieren
 

@@ -449,10 +449,25 @@ Grundform aus dem Kit.
 | `kpu-num` | Zahl, Zeit, Datum, Betrag, Dauer (Zelle oder Inline-Element) | Ziffern gleich breit, kein Umbruch |
 | `kpu-tier` + `data-kpu-tier="0–3"` | Stufe: `0` Grundstufe, `1`–`3` steigend (Zuschläge, Prioritäten) | keine; Farbe setzt das Plugin weiter selbst |
 | `kpu-mark` | Farbpunkt einer Entität (Kunde, Projekt, Tätigkeit) | `inline-block`, schrumpft nicht |
+| `kpu-mark` + `data-kpu-src="own\|inherited\|generated"` (seit 0.6, `kit.mark`) | Herkunft der Farbe: eigene, geerbte, von Kimai erzeugte | Ring durchgezogen, gestrichelt, gepunktet |
+| `kpu-delta` + `data-kpu-delta="up\|down\|flat"` (seit 0.6, `kit.delta`) | Veränderung zum Vorzeitraum | ▲ grün, ▼ rot, – grau; Text daneben |
+| `kpu-setting` (seit 0.6, `kit.setting`) | Einstellungszeile: Name, Erklärung, Steuerung, „Zurücksetzen“ | Raster, unter 576 px einspaltig |
+| `kpu-chip-pick` (seit 0.6, `kit.chip_pick`) | Checkbox als Chip (Mehrfachfilter) | Quadrat leer = aus, gefüllt = an |
+| `kpu-fold` (seit 0.6, `kit.fold`) | aufklappbarer Abschnitt mit Anzahl (`<details>`) | Dreieck dreht beim Öffnen |
+| `kpu-modebar` (seit 0.6, `kit.modebar`) | Auswahl einer Art/eines Modus mit Anzahl, als Links | Leiste, scrollt seitlich |
+| `kpu-hint-card` + `data-kpu-hint="info\|warning\|danger\|success"` (seit 0.6, `kit.hint_card`) | Befund mit Art, Quelle, „Warum?“, Aktionen | Balken oben; Art als Form + Text + Farbe |
 
+- Fehlt eine Kennzeichnung, kommt sie erst ins Kit, dann ihre Gestaltung nach Knust, dann ins Plugin (`agent.md`).
 - Kennzeichnungen ersetzen keine Tabler-Klassen: Eine Stufe bleibt z. B. `bg-yellow text-yellow-fg kpu-tier`,
   damit sie ohne Theme genauso aussieht wie vorher.
+- Die Kennzeichnungen seit 0.6 entsprechen Kantes `.swatch[data-src]`, `.delta`, `.setting`, `.chip-pick`, `.fold`,
+  `.modebar` und `.hint-card` (Kante 1.7). Plugins erzeugen sie nur über die Makros, nicht per Hand; Knust gestaltet sie.
+  `delta` folgt Kante: Steigen ist gut. Wo Steigen schlecht ist (Kosten, Fehler), `tier` oder `status_badge('warning', …)`.
+  `modebar` ist für Arten/Modi, `period_nav` bleibt für Zeiträume; `hint_card` für Befunde, `result_callout` für
+  Rückmeldungen nach einer Aktion.
 - Eigenes Plugin-CSS DARF Theme-Variablen nur mit Rückfallwert nutzen: `border-radius: var(--knust-mark-radius, 50%)`.
+  Das Kit selbst hält sich daran: Fokus `var(--knust-focus, var(--tblr-primary))`, Auswahl und aktueller Zustand
+  `var(--knust-hl, …)`/`var(--knust-cyan-tint, …)` (seit 0.6).
   Welche Variablen es gibt, steht beim Theme (Knust: `PLUGINS.md`).
 - Ein Plugin DARF NICHT abfragen, ob ein bestimmtes Theme installiert ist, um sein CSS zu ändern. Ausnahme nur für
   Ausgaben, die CSS nicht erreicht und die in Kimai bleiben; Exporte (PDF, Mail, ICS, CSV) bleiben immer neutral.
@@ -510,3 +525,7 @@ Grundform aus dem Kit.
 | Formular | FormTypes, `default/_form.html.twig`, `modal-ajax-form` | – |
 | Tagesraster | – | bewusst nicht im Kit (Drehzettel-spezifisch) |
 | Zahl, Stufe, Farbpunkt für Themes | Kimai-Spaltenklassen `col_*` | `kpu-num`, `kpu-tier`/`data-kpu-tier`, `kpu-mark` (8.1) |
+| Farbpunkt mit Herkunft, Veränderung | `widgets.label_dot` | `mark(color, label, src)`, `delta(text, direction)` (8.1) |
+| Einstellungszeile, aufklappbarer Abschnitt | FormTypes | `setting(label, control, options)`, `fold(title, body, options)` (8.1) |
+| Mehrfachfilter, Art/Modus mit Anzahl | Toolbar-Formular | `chip_pick(name, value, label, options)`, `modebar(items, label)` (8.1) |
+| Hinweis/Befund | `alert` | `hint_card(title, options)` (8.1) |

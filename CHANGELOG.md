@@ -2,6 +2,32 @@
 
 Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionen nach [SemVer](https://semver.org/lang/de/).
 
+## [0.6.0] – 2026-09-30
+
+Abgleich mit Knust 1.3 / Kante 1.7. Abwärtskompatibel: bestehende Makros rendern wie in 0.5.
+
+### Neu
+- Kennzeichnungen und Makros für die Kante-Bausteine, die Knust ohne Kit-Kennzeichnung nicht gestalten konnte:
+  `mark` (`kpu-mark` + `data-kpu-src`: Herkunftsring wie `.swatch[data-src]`), `delta` (`kpu-delta`, wie `.delta`),
+  `setting` (`kpu-setting`, wie `.setting`), `chip_pick` (`kpu-chip-pick`, wie `.chip-pick`), `fold` (`kpu-fold`,
+  wie `.fold`), `modebar` (`kpu-modebar`, wie `.modebar`), `hint_card` (`kpu-hint-card` + `data-kpu-hint`, wie
+  `.hint-card`; Raster `kpu-hint-cards`). Grundform ohne Theme, Gestaltung durch Knust.
+- Knust-Rollen mit Rückfallwert: Fokus `--knust-focus`, Auswahl/aktueller Zustand `--knust-hl`, `--knust-cyan-tint`;
+  verlinkte Kennzahl-Kacheln haben einen Fokusring.
+- Keys `kpu.delta.*`, `kpu.mark.*`, `kpu.setting.*`, `kpu.hint.*`; `bin/lint.sh` prüft die dynamischen.
+- `agent.md`/`CLAUDE.md`: GUI-Regel (Plugins nehmen die Oberfläche aus Knust, Fehlendes erst ins Kit/Knust) und
+  Repository-Regel (Gitea ist die Quelle, GitHub ein Spiegel).
+- GUIDELINES 8.1 und 11, CHECKLIST, README: neue Bausteine.
+
+### Behoben
+- `examples/demo.html.twig` kompilierte nicht: Kommentare `{# #}` standen innerhalb von Twig-Ausdrücken.
+
+### Migration 0.5 → 0.6
+- `bin/sync.sh <bundle>`, dann `--check`.
+- Eigene Nachbauten dieser Bausteine (Filter-Chips, Pfeil für Veränderung, aufklappbare Abschnitte, Einstellungszeilen,
+  Hinweiskarten, Modusleisten) durch die Makros ersetzen. Knust gestaltet die neuen Kennzeichnungen erst in einer
+  folgenden Version; bis dahin gilt die Grundform aus dem Kit.
+
 ## [0.5.0] – 2026-09-26
 
 `kit.kpi_bar` bekommt Bedeutung statt nur Position. Abwärtskompatibel: ohne `tier` sieht eine Kachel aus wie in 0.4.
