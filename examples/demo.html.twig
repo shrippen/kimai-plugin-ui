@@ -177,6 +177,60 @@
     {# Nächster Schritt im Kimai-Modal: link_class 'modal-ajax-form' (Formular-Controller siehe README, "Modal-Formulare") #}
     {{ kit.empty_state('Keine Abwesenheiten 2026.', urls.modal, 'Abwesenheit anlegen', 'modal-ajax-form') }}
 
+    {# ---------- Seit 0.6 (Kante 1.7): Modusleiste, Auswahl-Chips, Veränderung, Herkunftsring,
+       Hinweiskarten, Einstellungszeilen, aufklappbare Abschnitte ---------- #}
+    <div class="card mb-3">
+        <div class="card-body d-flex flex-column gap-3">
+            {# Modusleiste: Art/Modus mit Anzahl, Zustand in der URL #}
+            {{ kit.modebar([
+                {label: 'Alle', url: '?kind=all', count: 42|amount, active: true},
+                {label: 'Dienstreise', url: '?kind=business', count: 30|amount},
+                {label: 'Arbeitsweg', url: '?kind=commute', count: 10|amount},
+                {label: 'Privatfahrt', url: '?kind=private', count: 2|amount},
+            ], 'Fahrten nach Art') }}
+
+            {# Auswahl-Chips: Mehrfachfilter als echte Checkboxen #}
+            <div class="d-flex flex-wrap gap-2">
+                {{ kit.chip_pick('status[]', 'open', 'Offen', {checked: true, count: 12|amount}) }}
+                {{ kit.chip_pick('status[]', 'billed', 'Abgerechnet', {count: 30|amount}) }}
+                {{ kit.chip_pick('status[]', 'locked', 'Gesperrt', {count: 0|amount, disabled: true}) }}
+            </div>
+
+            {# Veränderung zum Vorzeitraum; Herkunftsring am Farbpunkt #}
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                {{ kit.delta('+12 %', 'up') }}
+                {{ kit.delta('−3:30', 'down') }}
+                {{ kit.delta('±0', 'flat') }}
+                <span class="d-inline-flex align-items-center gap-2">{{ kit.mark(null|colorize('Website'), 'Website', 'own') }} Website</span>
+                <span class="d-inline-flex align-items-center gap-2">{{ kit.mark(null|colorize('Website'), 'Design', 'inherited') }} Design</span>
+                <span class="d-inline-flex align-items-center gap-2">{{ kit.mark(null|colorize('App'), 'App', 'generated') }} App</span>
+            </div>
+        </div>
+    </div>
+
+    {# Hinweiskarten im Raster: Art als Form + Text + Farbe #}
+    {% set hint_actions %}<a class="btn btn-sm" href="#">Abrechnen</a>{% endset %}
+    <div class="kpu-hint-cards">
+        {{ kit.hint_card('4 Einträge seit über 30 Tagen nicht abgerechnet', {type: 'warning', source: 'ACME', due: 'bis ' ~ date('2026-10-15')|date_short, why: 'Nicht abgerechnete Einträge fehlen in der Monatsrechnung.', actions: hint_actions, url: '#'}) }}
+        {{ kit.hint_card('Ruhezeit am 24.09. unter 11 Stunden', {type: 'danger', source: 'Drehzettel', why: 'Zwischen zwei Arbeitstagen müssen 11 Stunden Ruhe liegen.'}) }}
+        {{ kit.hint_card('Feiertage 2027 noch nicht importiert', {source: 'Holiday'}) }}
+        {{ kit.hint_card('Monat September abgeschlossen', {type: 'success', source: 'Anfahrten'}) }}
+    </div>
+
+    {# Einstellungen und aufklappbarer Abschnitt #}
+    <div class="card mb-3">
+        <div class="card-body">
+            {% set rate_control %}<input type="text" class="form-control w-auto kpu-num" id="kpu-demo-rate" value="0,30" size="6">{% endset %}
+            {% set round_control %}<label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" id="kpu-demo-round" checked></label>{% endset %}
+            {{ kit.setting('Kilometersatz', rate_control, {for: 'kpu-demo-rate', hint: 'Betrag je gefahrenem Kilometer; Standard 0,30 €.', modified: true, reset: {url: '#'}}) }}
+            {{ kit.setting('Auf volle Kilometer runden', round_control, {for: 'kpu-demo-round', hint: 'Rundet jede Fahrt vor dem Summieren.', reset: {url: '#'}}) }}
+
+            {% set fold_body %}<p class="m-0 text-body-secondary">3 Einträge aus dem Vormonat.</p>{% endset %}
+            {{ kit.fold('Vormonat', fold_body, {count: 3|amount}) }}
+            {{ kit.fold('Offene Fragen', fold_body, {count: 1|amount, open: true}) }}
+        </div>
+    </div>
+
     {# Rückgängig-Toast direkt auslösen (nur Demo, Skript im javascripts-Block) #}
     <button type="button" class="btn" id="kpu-demo-toast">Toast zeigen</button>
 {% endblock %}
