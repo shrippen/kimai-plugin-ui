@@ -74,12 +74,12 @@
     {# Rückmeldung mit Zahl, z. B. nach Import #}
     {{ kit.result_callout('12 Feiertage für 2026 importiert.') }}
 
-    {# Kennzahlen: max. 4, eine hervorgehoben; Werte immer über Kimai-Filter formatiert #}
+    {# Kennzahlen: max. 4, eine hervorgehoben; Werte immer über Kimai-Filter formatiert.
+       details: ein Eintrag bricht nie um; zu lange Labels kürzt die Kachel mit "…" (seit 0.3) #}
     {{ kit.kpi_bar([
         {label: 'Offen', value: (5 * 3600 + 120)|duration, hint: '3 Einträge'},
         {label: 'Abgerechnet', value: (270 * 3600 + 1920)|duration},
         {label: 'Betrag offen', value: 1500.5|money('EUR'), highlight: true},
-        {# details: ein Eintrag bricht nie um; zu lange Labels kürzt die Kachel mit "…" (seit 0.3) #}
         {label: 'Zuschläge', value: 412.5|money('EUR'), url: '#', details: [
             {label: '25 % Nachtzuschlag', value: 90|money('EUR')},
             {label: '50 %', value: 202.5|money('EUR')},
@@ -125,7 +125,8 @@
                         <td class="{{ datatable_column_class('kpu_demo', 'duration') }}">{{ row.duration|duration }}</td>
                         <td class="{{ datatable_column_class('kpu_demo', 'status') }}">{{ kit.status_badge(row.status, row.status == 'warning' ? 'Ruhezeit unter 11 Stunden' : null) }}</td>
                         <td class="{{ datatable_column_class('kpu_demo', 'actions') }}">
-                            {# Sofort-Aktion (umkehrbar) im "…"-Menü: data-kpu-post, kein Modal; destruktiv bleibt beim Kimai-Modal #}
+                            {# Sofort-Aktion (umkehrbar) im "…"-Menü: data-kpu-post, kein Modal; destruktiv bleibt beim Kimai-Modal.
+                               "locked": endgültig, aber nicht destruktiv: data-kpu-question (reiner Text – kit.js maskiert ihn, seit 0.3) #}
                             {{ widgets.table_actions({
                                 'success': {url: '#', title: 'Abrechnen', translation_domain: 'messages', attr: {
                                     'data-kpu-post': urls.post,
@@ -134,7 +135,6 @@
                                     'data-kpu-params': {action: 'mark'}|json_encode,
                                 }},
                                 'edit': {url: urls.modal, class: 'modal-ajax-form', title: 'edit'},
-                                {# Endgültig, aber nicht destruktiv: data-kpu-question (reiner Text – kit.js maskiert ihn, seit 0.3) #}
                                 'locked': {url: '#', title: 'Abschließen', translation_domain: 'messages', attr: {
                                     'data-kpu-post': urls.post,
                                     'data-kpu-token': csrf_token('kpu_demo'),
