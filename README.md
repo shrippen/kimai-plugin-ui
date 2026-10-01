@@ -1,5 +1,8 @@
 # kimai-plugin-ui
 
+> **Umgezogen:** Das Kit liegt jetzt im Repo [Kante](https://github.com/shrippen/Kante) unter `kimai/kit/`
+> (Historie übernommen; `kimai/kit/bin/sync.sh <plugin>` wie bisher). Dieses Repo ist archiviert.
+
 Gemeinsamer UI-Leitfaden und kleines UI-Kit für die Kimai-2.67-Plugins **Drehzettel**, **Holiday**, **Abrechnung** und **Anfahrten** (MileageBundle).
 
 - **[GUIDELINES.md](GUIDELINES.md)** – verbindliche Regeln: welcher Kimai-Baustein für welches Muster, Status-Vokabular,
