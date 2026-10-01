@@ -35,6 +35,11 @@
     margin-bottom: .5rem;
     overflow-wrap: anywhere;
 }
+/* In Kimai's page header the context line shares a row with the actions: with many actions it was
+   squeezed to a narrow column and broke inside words. It takes the full row, the actions follow. */
+.page-header .row > .col:has(.kpu-context) {
+    flex: 1 0 100%;
+}
 .kpu-context-sep {
     color: var(--tblr-secondary-color);
 }
@@ -628,8 +633,10 @@ a.kpu-hint-card-title:hover {
     font-size: .75rem;
     overflow-wrap: anywhere;
 }
+/* Weekend lifted (Tabler's secondary-lt tint), not sunk: in Knust dark the sunk ground made
+   weekends hard to tell from workdays in the absence calendar. Kante's .cal sinks them. */
 .kpu-day[data-kpu-day~="weekend"] {
-    background: var(--tblr-bg-surface-secondary);
+    background: var(--tblr-secondary-lt);
     color: var(--tblr-secondary-color);
 }
 .kpu-day[data-kpu-day~="holiday"]::after,

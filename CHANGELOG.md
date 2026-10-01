@@ -2,6 +2,14 @@
 
 Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionen nach [SemVer](https://semver.org/lang/de/).
 
+## [0.7.1] – 2026-10-01
+
+### Geändert
+- `calendar_day`: Wochenende hell getönt (`--tblr-secondary-lt`) statt abgesenkt; im dunklen Knust waren
+  Wochenenden im Abwesenheitskalender kaum von Werktagen zu unterscheiden. Weicht bewusst von Kantes `.cal` ab.
+- `context_line` im Kimai-Seitenkopf nimmt die volle Zeile, die Aktionen folgen darunter; bei vielen Aktionen
+  wurde die Zeile vorher auf eine schmale Spalte gedrückt und brach mitten im Wort (Drehzettel-Woche ohne Knust).
+
 ## [0.7.0] – 2026-09-30
 
 Abgleich mit Knust 1.4 / Kante 1.9. Abwärtskompatibel bis auf die Farbe von `billed`.
